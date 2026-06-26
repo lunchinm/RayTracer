@@ -173,7 +173,7 @@ I = I_local + ks * I_reflect + kt * I_refract
 
 > **验收规则**：每个 Phase 完成后，由我来更新状态为 `🔒 待验收`。用户验收通过并说"可以了"后，我来标记 `✅ 已验收`，然后进入下一个 Phase。**我不会在用户确认前自行标记已验收。**
 
-### Phase 1：基础框架 — ✅ 已验收
+### Phase 1：基础框架 — ✅ 已验收 (2026-06-22)
 
 #### 项目基础设施
 - [x] 初始化项目（Vite + TypeScript）
@@ -212,7 +212,7 @@ I = I_local + ks * I_reflect + kt * I_refract
 - [x] BVH 开关 / GPU 开关（UI 就绪，逻辑待 Phase 4）
 - [x] R 键触发渲染（UI 就绪，渲染逻辑待 Phase 2）
 
-### Phase 2：CPU 光追核心 — 🔒 待验收
+### Phase 2：CPU 光追核心 — ✅ 已验收
 - [x] 实现几何体顶点生成（5种几何体→三角形，参考 Unity Assets/Scripts 参数）
 - [x] 实现射线-三角形求交（Möller-Trumbore 算法）
 - [x] 实现暴力场景遍历（所有三角形逐个测试，BVH 待 Phase 4）
@@ -351,4 +351,4 @@ npm run preview  # 预览生产版本
 
 ---
 
-_最后更新：2026-06-26 16:14_
+_最后更新：2026-06-26 16:20_
