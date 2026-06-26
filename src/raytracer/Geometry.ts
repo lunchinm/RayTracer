@@ -18,7 +18,10 @@ export class Vec3 {
 
   add(v: Vec3): Vec3 { return new Vec3(this.x + v.x, this.y + v.y, this.z + v.z); }
   sub(v: Vec3): Vec3 { return new Vec3(this.x - v.x, this.y - v.y, this.z - v.z); }
-  mul(s: number): Vec3 { return new Vec3(this.x * s, this.y * s, this.z * s); }
+  mul(s: number | Vec3): Vec3 {
+    if (typeof s === 'number') return new Vec3(this.x * s, this.y * s, this.z * s);
+    return new Vec3(this.x * s.x, this.y * s.y, this.z * s.z);
+  }
   div(s: number): Vec3 { return new Vec3(this.x / s, this.y / s, this.z / s); }
 
   dot(v: Vec3): number { return this.x * v.x + this.y * v.y + this.z * v.z; }

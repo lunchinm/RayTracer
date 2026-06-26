@@ -28,7 +28,15 @@ export class RayCamera {
   ) {
     this.position = position;
     this.forward = lookAt.sub(position).normalize();
-    this.right = this.forward.cross(worldUp).normalize();
+
+    // 防 forward ∥ worldUp（垂直俯视/仰视时 cross 为零向量）
+    let right = this.forward.cross(worldUp);
+    if (right.lengthSq() < 1e-12) {
+      // 选择一个与 forward 不平行的世界轴
+      const altUp = new Vec3(0, 0, Math.abs(this.forward.y) > 0.99 ? -1 : 1);
+      right = this.forward.cross(altUp);
+    }
+    this.right = right.normalize();
     this.up = this.right.cross(this.forward).normalize();
 
     const fovRad = fovDeg * Math.PI / 180;
