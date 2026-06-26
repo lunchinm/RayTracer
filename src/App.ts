@@ -38,13 +38,9 @@ export class App {
     this.scene.onChange(() => this.onSceneChanged());
     this.scene.onSelectionChange(() => this.onSelectionChanged());
 
-    // 默认添加几个演示物体
-    this.scene.addObject('sphere', '球体_演示');
-    const cube = this.scene.addObject('cube', '立方体_演示');
-    this.scene.updateTransform(cube.id, { x: -2, y: 0, z: 0 });
-
+    // 场景初始为空，用户自行添加物体
     this.logger.info('RayTracer Web 初始化完成');
-    this.setStatus('就绪');
+    this.setStatus('就绪 - 请添加物体');
   }
 
   /* ==================== UI 绑定 ==================== */
