@@ -124,7 +124,7 @@ function buildCube(
   return tris;
 }
 
-/** 生成平面三角形 (匹配 Three.js PlaneGeometry: XY 平面, 法线 +Z) */
+/** 生成平面三角形 (XZ 水平面, 法线 +Y, 与 Three.js PlaneGeometry.rotateX(-PI/2) 一致) */
 function buildPlane(
   position: Vec3, rot: { x: number; y: number; z: number },
   scale: Vec3, matIdx: number
@@ -133,15 +133,15 @@ function buildPlane(
   const rotM = buildRotationMatrix(toRad(rot.x), toRad(rot.y), toRad(rot.z));
   const s = 1.0; // 2×2 plane, half = 1
 
-  // Three.js PlaneGeometry(2,2) 顶点在 XY 平面 (z=0)
-  // 顺时针绕序 (从 +Z 看): 上左→下左→下右, 上左→下右→上右 → 法线 +Z
+  // 顶点在 XZ 平面 (y=0), scale.y 影响厚度(对无限薄平面无实际效果)
+  // 逆时针绕序 (从 +Y 俯视): 右下→左下→左上, 右下→左上→右上 → 法线 +Y
   const corners = [
-    new Vec3(-s, -s, 0), new Vec3( s, -s, 0),
-    new Vec3(-s,  s, 0), new Vec3( s,  s, 0),
+    new Vec3(-s, 0,  s), new Vec3(-s, 0, -s),
+    new Vec3( s, 0, -s), new Vec3( s, 0,  s),
   ].map(v => rotM.transform(v).mul(scale).add(position));
 
-  addTriangle(tris, corners[2], corners[0], corners[1], matIdx); // topL→botL→botR
-  addTriangle(tris, corners[2], corners[1], corners[3], matIdx); // topL→botR→topR
+  addTriangle(tris, corners[2], corners[1], corners[0], matIdx); // rightFar→leftFar→leftNear
+  addTriangle(tris, corners[2], corners[0], corners[3], matIdx); // rightFar→leftNear→rightNear
   return tris;
 }
 

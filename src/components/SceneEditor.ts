@@ -232,6 +232,7 @@ export class SceneEditor {
         break;
       case 'plane':
         geometry = new THREE.PlaneGeometry(2, 2);
+        geometry.rotateX(-Math.PI / 2); // XY→XZ 水平面, 与光追 buildPlane 一致
         break;
       case 'cylinder':
         geometry = new THREE.CylinderGeometry(0.5, 0.5, 1.5, 32);
