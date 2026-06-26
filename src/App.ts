@@ -2,11 +2,17 @@ import { Scene } from './scene/Scene';
 import { GameObjectData } from './scene/GameObject';
 import { createLogger, Logger } from './utils/Logger';
 import { SceneEditor } from './components/SceneEditor';
+import { RayTracer } from './raytracer/RayTracer';
+import { RayCamera } from './raytracer/Camera';
+import { Vec3, Color } from './raytracer/Geometry';
+import { buildSceneData } from './raytracer/SceneBuilder';
 
 export class App {
   private scene!: Scene;
   private sceneEditor!: SceneEditor;
   private logger!: Logger;
+  private rayTracer!: RayTracer;
+  private renderCancelled = false;
 
   // UI 引用
   private elHierarchy!: HTMLElement;
@@ -18,6 +24,7 @@ export class App {
 
   init(): void {
     this.scene = new Scene();
+    this.rayTracer = new RayTracer();
     this.bindUI();
     this.setupSceneEditor();
     this.setupToolbar();
@@ -361,11 +368,116 @@ export class App {
     });
   }
 
-  /* ==================== 渲染触发（Phase 2 实现） ==================== */
+  /* ==================== 渲染触发 ==================== */
 
   private startRender(): void {
-    this.logger.info('渲染功能将在 Phase 2 实现');
-    this.setStatus('渲染功能待实现 (Phase 2)');
+    if (this.scene.objects.length === 0) {
+      this.logger.warn('场景为空，无法渲染');
+      return;
+    }
+
+    this.setStatus('正在准备渲染...');
+    this.renderCancelled = false;
+
+    // 显示渲染输出区
+    const output = document.getElementById('render-output')!;
+    const resultContainer = document.getElementById('result-container')!;
+    output.style.display = 'block';
+    resultContainer.style.display = 'none';
+
+    // 禁用渲染按钮避免重复触发
+    const btnRender = document.getElementById('btn-render') as HTMLButtonElement;
+    if (btnRender) btnRender.disabled = true;
+
+    // 1. 读取渲染设置
+    const resText = (document.getElementById('setting-resolution') as HTMLSelectElement).value;
+    const [wStr, hStr] = resText.split('x');
+    const width = parseInt(wStr), height = parseInt(hStr);
+    const maxDepth = parseInt((document.getElementById('setting-max-depth') as HTMLInputElement).value) || 5;
+    const aaText = (document.getElementById('setting-aa') as HTMLSelectElement).value;
+    const aaSamples = parseInt(aaText.replace('x', ''));
+    const energy = parseFloat((document.getElementById('setting-energy') as HTMLInputElement).value) || 0.01;
+    const lightColor = Color.fromHex((document.getElementById('light-color') as HTMLInputElement).value);
+    const lightIntensity = parseFloat((document.getElementById('light-intensity') as HTMLInputElement).value);
+    const ambientColor = Color.fromHex((document.getElementById('ambient-color') as HTMLInputElement).value);
+    const ambientIntensity = parseFloat((document.getElementById('ambient-intensity') as HTMLInputElement).value);
+
+    // 2. 构建光追相机（从 Three.js 相机同步）
+    const camState = this.sceneEditor.getCameraState();
+    const rayCam = new RayCamera(
+      new Vec3(camState.position.x, camState.position.y, camState.position.z),
+      camState.fov, camState.aspect,
+      new Vec3(camState.target.x, camState.target.y, camState.target.z)
+    );
+
+    // 3. 构建场景数据（GameObject → Triangles）
+    const sceneData = buildSceneData(this.scene.objects);
+    this.logger.info(`场景: ${sceneData.triangles.length} 三角形, ${sceneData.materials.length} 材质`);
+
+    // 4. 光源方向（从 Three.js 场景同步，默认右上后方）
+    const lightDir = new Vec3(-0.577, 1, -0.577).normalize();
+
+    // 5. 配置光追引擎
+    this.rayTracer.configure({
+      camera: rayCam,
+      width, height,
+      aaSamples,
+      maxDepth,
+      energyThreshold: energy,
+      bgColor: new Color(0.2, 0.25, 0.35),
+      lightDir,
+      lightColor, lightIntensity,
+      ambientColor, ambientIntensity
+    });
+    this.rayTracer.setScene(sceneData);
+
+    // 6. 进度回调
+    this.rayTracer.onProgress = (percent, rays, tests) => {
+      if (this.renderCancelled) return;
+      this.setStatus(`渲染中... ${percent}%`);
+      if (percent % 10 === 0 || percent >= 100) {
+        this.logger.info(`${percent}% | 射线: ${rays} | 求交: ${tests}`);
+      }
+    };
+
+    // 7. 启动渲染
+    this.logger.info(`开始渲染 ${width}×${height} | AA: ${aaSamples}× | 深度: ${maxDepth} | 三角: ${sceneData.triangles.length}`);
+    this.setStatus('渲染中... 0%');
+
+    const startTime = performance.now();
+
+    this.rayTracer.render().then(imageData => {
+      if (this.renderCancelled) return;
+
+      const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+      const stats = this.rayTracer.getStats();
+      this.logger.success(`渲染完成 | 耗时 ${elapsed}s | 射线 ${stats.rays} | 求交 ${stats.tests}`);
+
+      // 显示结果到 Canvas
+      const resultCanvas = document.getElementById('result-canvas') as HTMLCanvasElement;
+      resultCanvas.width = width;
+      resultCanvas.height = height;
+      const ctx = resultCanvas.getContext('2d')!;
+      ctx.putImageData(imageData, 0, 0);
+      resultContainer.style.display = 'block';
+
+      // 显示保存按钮
+      const saveBtn = document.getElementById('btn-save-image')!;
+      saveBtn.style.display = 'inline-block';
+      saveBtn.onclick = () => {
+        const link = document.createElement('a');
+        link.download = `raytrace_${width}x${height}.png`;
+        link.href = resultCanvas.toDataURL('image/png');
+        link.click();
+      };
+
+      this.setStatus(`完成 (${elapsed}s)`);
+      if (btnRender) btnRender.disabled = false;
+    }).catch(err => {
+      this.logger.error(`渲染失败: ${err.message}`);
+      this.setStatus('渲染失败');
+      if (btnRender) btnRender.disabled = false;
+    });
   }
 
   /* ==================== 工具方法 ==================== */

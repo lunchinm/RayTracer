@@ -370,6 +370,16 @@ export class SceneEditor {
     }
   };
 
+  /** 导出相机状态（供光追引擎使用） */
+  getCameraState(): { position: THREE.Vector3; target: THREE.Vector3; fov: number; aspect: number } {
+    return {
+      position: this.camera.position.clone(),
+      target: this.orbitControls.target.clone(),
+      fov: this.camera.fov,
+      aspect: this.camera.aspect
+    };
+  }
+
   dispose(): void {
     this.renderer.dispose();
   }
