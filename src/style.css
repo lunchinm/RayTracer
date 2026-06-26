@@ -249,6 +249,19 @@ html, body {
   color: var(--accent);
 }
 
+/* 层级内联编辑 */
+.inline-name-edit {
+  flex: 1;
+  padding: 1px 4px;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  font-size: 12px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  outline: none;
+  min-width: 0;
+}
+
 /* ========== 材质面板 ========== */
 .material-item {
   display: flex;
@@ -318,6 +331,28 @@ html, body {
   cursor: pointer;
   background: var(--bg-input);
   padding: 1px;
+}
+
+.transform-row input[type="text"] {
+  width: 100%;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.transform-row input[type="text"]:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.transform-name-section {
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
 }
 
 .transform-section {

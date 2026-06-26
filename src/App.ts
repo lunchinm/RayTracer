@@ -264,7 +264,7 @@ export class App {
       div.dataset.id = obj.id;
       div.innerHTML = `
         <span class="type-icon">[${typeLabels[obj.type] || '?'}]</span>
-        <span class="item-name">${obj.name}</span>
+        <span class="item-name" data-name="${obj.id}">${this.escAttr(obj.name)}</span>
         <span class="item-delete" data-delete="${obj.id}">x</span>
       `;
       div.addEventListener('click', (e) => {
@@ -277,6 +277,12 @@ export class App {
         }
         this.scene.selectObject(obj.id);
       });
+      // 双击名称 → 内联编辑
+      const nameSpan = div.querySelector('.item-name')!;
+      nameSpan.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        this.startInlineEdit(nameSpan, obj.id);
+      });
       this.elHierarchy.appendChild(div);
     }
   }
@@ -288,6 +294,12 @@ export class App {
       return;
     }
     this.elTransform.innerHTML = `
+      <div class="transform-section transform-name-section">
+        <h4>名称</h4>
+        <div class="transform-row">
+          <input type="text" data-field="name" value="${this.escAttr(sel.name)}" placeholder="输入物体名称">
+        </div>
+      </div>
       <div class="transform-section">
         <h4>位置 (Position)</h4>
         <div class="transform-row">
@@ -323,6 +335,18 @@ export class App {
     // 绑定输入事件
     this.elTransform.querySelectorAll('input').forEach(inp => {
       const field = (inp as HTMLInputElement).dataset.field!;
+      if (field === 'name') {
+        // 名称变更：防抖 300ms 后更新
+        let nameTimer: ReturnType<typeof setTimeout>;
+        inp.addEventListener('input', () => {
+          clearTimeout(nameTimer);
+          const newName = (inp as HTMLInputElement).value.trim();
+          nameTimer = setTimeout(() => {
+            if (newName) this.scene.renameObject(sel.id, newName);
+          }, 300);
+        });
+        return;
+      }
       inp.addEventListener('input', () => {
         const val = parseFloat((inp as HTMLInputElement).value) || 0;
         if (field === 'color') {
@@ -342,6 +366,41 @@ export class App {
   private startRender(): void {
     this.logger.info('渲染功能将在 Phase 2 实现');
     this.setStatus('渲染功能待实现 (Phase 2)');
+  }
+
+  /* ==================== 工具方法 ==================== */
+
+  private escAttr(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  /** 层级列表双击内联编辑名称 */
+  private startInlineEdit(nameSpan: HTMLElement, objId: string): void {
+    const obj = this.scene.getObject(objId);
+    if (!obj) return;
+    const origName = obj.name;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = origName;
+    input.className = 'inline-name-edit';
+    nameSpan.replaceWith(input);
+    input.focus();
+    input.select();
+
+    const commit = () => {
+      const newName = input.value.trim();
+      input.replaceWith(nameSpan);
+      if (newName && newName !== origName) {
+        this.scene.renameObject(objId, newName);
+      }
+    };
+
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); commit(); }
+      if (e.key === 'Escape') { input.value = origName; commit(); }
+    });
   }
 
   /* ==================== 状态栏 ==================== */

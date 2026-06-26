@@ -92,4 +92,13 @@ export class Scene {
     if (color !== undefined) obj.color = color;
     this.notify();
   }
+
+  renameObject(id: string, newName: string): void {
+    const obj = this.getObject(id);
+    if (!obj) return;
+    const trimmed = newName.trim();
+    if (trimmed.length === 0) return;
+    obj.name = trimmed;
+    this.notify();
+  }
 }
