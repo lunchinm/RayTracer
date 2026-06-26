@@ -319,14 +319,18 @@ export class SceneEditor {
     this.renderer.autoClear = true;
     this.renderer.render(this.scene3D, this.camera);
 
-    // 右上角坐标指示器（透明背景，跟随相机旋转）
+    // 右上角坐标指示器（透明背景，中心圆点始终固定不动）
     if (this.vpW > 0 && this.vpH > 0) {
       const margin = 12;
       const gizmoSize = Math.round(Math.min(this.vpW, this.vpH) * 0.14);
       const x = this.vpW - gizmoSize - margin;
       const y = this.vpH - gizmoSize - margin;
 
-      this.axesCamera.quaternion.copy(this.camera.quaternion);
+      // axesCamera 绕原点轨道，始终 lookAt 原点 → 中心圆点不动
+      const rotQ = this.camera.quaternion;
+      this.axesCamera.position.set(0, 0, 2.5).applyQuaternion(rotQ);
+      this.axesCamera.up.set(0, 1, 0).applyQuaternion(rotQ);
+      this.axesCamera.lookAt(0, 0, 0);
 
       this.renderer.autoClear = false;
       this.renderer.setViewport(x, y, gizmoSize, gizmoSize);
