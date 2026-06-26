@@ -52,16 +52,15 @@ export class SceneEditor {
     this.camera.position.set(5, 3, 7);
     this.camera.lookAt(0, 0, 0);
 
-    // OrbitControls - 左右键交换：左键选择，右键旋转
+    // OrbitControls - 左键平移, 右键旋转, 中键缩放, 滚轮缩放
     this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
     this.orbitControls.enableDamping = true;
     this.orbitControls.dampingFactor = 0.08;
     this.orbitControls.target.set(0, 0, 0);
     this.orbitControls.minDistance = 1;
     this.orbitControls.maxDistance = 30;
-    // 重映射：LEFT=不操作(留给选择), RIGHT=旋转, MIDDLE=缩放
     this.orbitControls.mouseButtons = {
-      LEFT: null as any,
+      LEFT: THREE.MOUSE.PAN,
       MIDDLE: THREE.MOUSE.DOLLY,
       RIGHT: THREE.MOUSE.ROTATE
     };
@@ -69,9 +68,11 @@ export class SceneEditor {
     // TransformControls
     this.transformControls = new TransformControls(this.camera, this.renderer.domElement);
     this.transformControls.addEventListener('dragging-changed', (e: any) => {
-      this.orbitControls.enabled = !(e.target as TransformControls).dragging;
-      if (!(e.target as TransformControls).dragging) {
-        this.onTransformEnd();
+      const dragging = (e.target as TransformControls).dragging;
+      this.orbitControls.enabled = !dragging;
+      if (!dragging) {
+        // 延迟到下一帧确保 TransformControls 内部状态完全写入 Object3D
+        setTimeout(() => this.onTransformEnd(), 0);
       }
     });
     this.scene3D.add(this.transformControls as unknown as THREE.Object3D);
@@ -117,8 +118,10 @@ export class SceneEditor {
     this.resize();
     this.render();
 
-    // 监听场景变化
+    // 监听场景数据变化 → 同步网格
     this.dataScene.onChange(() => this.syncScene());
+    // 监听选中变化 → 更新 TransformControls 附着（不在 syncScene 中处理，避免与 Gizmo 拖拽冲突）
+    this.dataScene.onSelectionChange(() => this.updateSelection());
   }
 
   private setupEvents(): void {
@@ -232,9 +235,8 @@ export class SceneEditor {
     for (const obj of this.dataScene.objects) {
       this.upsertMesh(obj);
     }
-
-    // 选中状态
-    this.updateSelection();
+    // 注意：updateSelection() 不再在此调用，改为由 onSelectionChange 触发
+    // 避免 Gizmo 拖拽结束后 syncScene 重新 attach 导致物体丢失
   }
 
   private removeMesh(id: string): void {

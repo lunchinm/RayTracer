@@ -148,15 +148,19 @@ export class App {
 
   private setupClickSelection(): void {
     const canvas = document.getElementById('viewport') as HTMLCanvasElement;
+    let mouseDownPos = { x: 0, y: 0 };
     let mouseDown = false;
-    let mouseMoved = false;
 
-    canvas.addEventListener('pointerdown', () => { mouseDown = true; mouseMoved = false; });
-    canvas.addEventListener('pointermove', (e) => {
-      if (mouseDown && e.buttons > 0) mouseMoved = true;
+    canvas.addEventListener('pointerdown', (e) => {
+      mouseDownPos = { x: e.clientX, y: e.clientY };
+      mouseDown = true;
     });
     canvas.addEventListener('pointerup', (e) => {
-      if (!mouseMoved && e.button === 0) {
+      if (!mouseDown) return;
+      const dx = e.clientX - mouseDownPos.x;
+      const dy = e.clientY - mouseDownPos.y;
+      const moved = Math.sqrt(dx * dx + dy * dy) > 3; // 3px 阈值区分点击/拖拽
+      if (!moved && e.button === 0) {
         const result = this.sceneEditor.pickObject(e);
         if (result.object) {
           this.scene.selectObject(result.object.id);
@@ -165,7 +169,6 @@ export class App {
         }
       }
       mouseDown = false;
-      mouseMoved = false;
     });
   }
 
