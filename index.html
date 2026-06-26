@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RayTracer Web</title>
+  <link rel="icon" type="image/svg+xml" href="/RayTracer/favicon.svg" />
+</head>
+<body>
+  <div id="app">
+    <!-- 顶部工具栏 -->
+    <div id="toolbar">
+      <div class="toolbar-left">
+        <span class="app-title">RayTracer</span>
+        <div class="add-objects">
+          <button id="btn-add-sphere" title="添加球体">⚫ 球体</button>
+          <button id="btn-add-cube" title="添加立方体">🟫 立方体</button>
+          <button id="btn-add-plane" title="添加平面">⬜ 平面</button>
+          <button id="btn-add-cylinder" title="添加圆柱">📏 圆柱</button>
+          <button id="btn-add-capsule" title="添加胶囊体">💊 胶囊体</button>
+        </div>
+      </div>
+      <div class="toolbar-right">
+        <button id="btn-render" class="btn-render" title="开始渲染 (R)">🎬 渲染 (R)</button>
+      </div>
+    </div>
+
+    <!-- 主体 -->
+    <div id="main-container">
+      <!-- 左栏：场景编辑器 -->
+      <div id="scene-editor">
+        <div id="viewport-container">
+          <canvas id="viewport"></canvas>
+          <div id="viewport-hint">🖱 左键选择 | 右键旋转 | 滚轮缩放 | 中键平移</div>
+        </div>
+        <div id="scene-panels">
+          <!-- 场景层级 -->
+          <div class="panel" id="panel-hierarchy">
+            <div class="panel-header">📋 场景层级</div>
+            <div class="panel-content" id="hierarchy-list">
+              <div class="empty-hint">场景为空，请添加物体</div>
+            </div>
+          </div>
+          <!-- 材质面板 -->
+          <div class="panel" id="panel-materials">
+            <div class="panel-header">🎨 材质</div>
+            <div class="panel-content" id="material-list">
+              <div class="material-item draggable" data-material="diffuse">
+                <div class="material-preview diffuse-preview"></div>
+                <span>漫反射</span>
+              </div>
+              <div class="material-item draggable" data-material="specular">
+                <div class="material-preview specular-preview"></div>
+                <span>镜面反射</span>
+              </div>
+              <div class="material-item draggable" data-material="transparent">
+                <div class="material-preview transparent-preview"></div>
+                <span>透明</span>
+              </div>
+            </div>
+          </div>
+          <!-- 变换编辑 -->
+          <div class="panel" id="panel-transform">
+            <div class="panel-header">📍 变换</div>
+            <div class="panel-content" id="transform-content">
+              <div class="empty-hint">请选中一个物体</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 分割线 -->
+      <div id="divider"></div>
+
+      <!-- 右栏：渲染面板 -->
+      <div id="render-panel">
+        <div id="render-settings">
+          <div class="panel">
+            <div class="panel-header">⚙️ 渲染设置</div>
+            <div class="panel-content">
+              <div class="setting-row">
+                <label>分辨率</label>
+                <select id="setting-resolution">
+                  <option value="320x240">320×240</option>
+                  <option value="480x360">480×360</option>
+                  <option value="640x480" selected>640×480</option>
+                  <option value="800x600">800×600</option>
+                  <option value="1024x768">1024×768</option>
+                </select>
+              </div>
+              <div class="setting-row">
+                <label>最大弹射深度</label>
+                <input type="number" id="setting-max-depth" value="5" min="1" max="20" />
+              </div>
+              <div class="setting-row">
+                <label>AA 采样数</label>
+                <select id="setting-aa">
+                  <option value="1">1× (无)</option>
+                  <option value="2">2×</option>
+                  <option value="4" selected>4×</option>
+                  <option value="8">8×</option>
+                </select>
+              </div>
+              <div class="setting-row">
+                <label>终止能量</label>
+                <input type="number" id="setting-energy" value="0.01" min="0.001" max="0.1" step="0.001" />
+              </div>
+              <div class="setting-row">
+                <label>
+                  <input type="checkbox" id="setting-bvh" checked />
+                  启用 BVH
+                </label>
+              </div>
+              <div class="setting-row">
+                <label>
+                  <input type="checkbox" id="setting-gpu" />
+                  启用 GPU 加速
+                </label>
+                <span id="gpu-hint" class="hint"></span>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header">💡 光照设置</div>
+            <div class="panel-content">
+              <div class="setting-row">
+                <label>方向光颜色</label>
+                <input type="color" id="light-color" value="#ffffff" />
+              </div>
+              <div class="setting-row">
+                <label>方向光亮度</label>
+                <input type="range" id="light-intensity" min="0" max="5" step="0.1" value="1" />
+                <span id="light-intensity-val">1.0</span>
+              </div>
+              <div class="setting-row">
+                <label>环境光颜色</label>
+                <input type="color" id="ambient-color" value="#404060" />
+              </div>
+              <div class="setting-row">
+                <label>环境光强度</label>
+                <input type="range" id="ambient-intensity" min="0" max="2" step="0.05" value="0.3" />
+                <span id="ambient-intensity-val">0.30</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="render-output">
+          <div id="log-output">
+            <div class="panel-header">📜 日志</div>
+            <div id="log-content"></div>
+          </div>
+          <div id="result-container" style="display:none;">
+            <div class="panel-header">🖼 渲染结果</div>
+            <div id="result-image-wrapper">
+              <canvas id="result-canvas"></canvas>
+            </div>
+            <button id="btn-save-image" style="display:none;">💾 保存图片</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="status-bar">
+      <span id="status-fps">FPS: --</span>
+      <span id="status-objects">物体: 0</span>
+      <span id="status-message">就绪</span>
+    </div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
