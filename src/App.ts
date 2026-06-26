@@ -99,12 +99,14 @@ export class App {
       resolution: string; maxDepth: number; aa: string; energy: number;
       bvh: boolean; gpu: boolean;
       lightColor: string; lightIntensity: number;
+      lightDirX: number; lightDirY: number; lightDirZ: number;
       ambientColor: string; ambientIntensity: number;
     };
     const defaults: RPSettings = {
       resolution: '640x480', maxDepth: 5, aa: '4', energy: 0.01,
       bvh: true, gpu: false,
       lightColor: '#ffffff', lightIntensity: 1.0,
+      lightDirX: -0.58, lightDirY: 1, lightDirZ: -0.58,
       ambientColor: '#404060', ambientIntensity: 0.3,
     };
     let saved: RPSettings;
@@ -123,6 +125,9 @@ export class App {
         gpu: (document.getElementById('setting-gpu') as HTMLInputElement).checked,
         lightColor: (document.getElementById('light-color') as HTMLInputElement).value,
         lightIntensity: parseFloat((document.getElementById('light-intensity') as HTMLInputElement).value),
+        lightDirX: parseFloat((document.getElementById('light-dir-x') as HTMLInputElement).value),
+        lightDirY: parseFloat((document.getElementById('light-dir-y') as HTMLInputElement).value),
+        lightDirZ: parseFloat((document.getElementById('light-dir-z') as HTMLInputElement).value),
         ambientColor: (document.getElementById('ambient-color') as HTMLInputElement).value,
         ambientIntensity: parseFloat((document.getElementById('ambient-intensity') as HTMLInputElement).value),
       };
@@ -140,6 +145,13 @@ export class App {
     const lightIntensity = document.getElementById('light-intensity') as HTMLInputElement;
     lightIntensity.value = String(saved.lightIntensity);
     document.getElementById('light-intensity-val')!.textContent = saved.lightIntensity.toFixed(2);
+
+    (document.getElementById('light-dir-x') as HTMLInputElement).value = String(saved.lightDirX);
+    document.getElementById('light-dir-x-val')!.textContent = saved.lightDirX.toFixed(2);
+    (document.getElementById('light-dir-y') as HTMLInputElement).value = String(saved.lightDirY);
+    document.getElementById('light-dir-y-val')!.textContent = saved.lightDirY.toFixed(2);
+    (document.getElementById('light-dir-z') as HTMLInputElement).value = String(saved.lightDirZ);
+    document.getElementById('light-dir-z-val')!.textContent = saved.lightDirZ.toFixed(2);
 
     const ambientIntensity = document.getElementById('ambient-intensity') as HTMLInputElement;
     ambientIntensity.value = String(saved.ambientIntensity);
@@ -175,6 +187,17 @@ export class App {
       lightIntensityVal.textContent = parseFloat(lightIntensity.value).toFixed(2);
       persist();
     });
+
+    // 光源方向滑块
+    const lightDirX = document.getElementById('light-dir-x') as HTMLInputElement;
+    const lightDirY = document.getElementById('light-dir-y') as HTMLInputElement;
+    const lightDirZ = document.getElementById('light-dir-z') as HTMLInputElement;
+    const lightDirXVal = document.getElementById('light-dir-x-val')!;
+    const lightDirYVal = document.getElementById('light-dir-y-val')!;
+    const lightDirZVal = document.getElementById('light-dir-z-val')!;
+    lightDirX.addEventListener('input', () => { lightDirXVal.textContent = parseFloat(lightDirX.value).toFixed(2); persist(); });
+    lightDirY.addEventListener('input', () => { lightDirYVal.textContent = parseFloat(lightDirY.value).toFixed(2); persist(); });
+    lightDirZ.addEventListener('input', () => { lightDirZVal.textContent = parseFloat(lightDirZ.value).toFixed(2); persist(); });
 
     const ambientIntensityVal = document.getElementById('ambient-intensity-val')!;
     ambientIntensity.addEventListener('input', () => {
@@ -505,8 +528,11 @@ export class App {
     const sceneData = buildSceneData(this.scene.objects);
     this.logger.info(`场景: ${sceneData.triangles.length} 三角形, ${sceneData.materials.length} 材质`);
 
-    // 4. 光源方向（从 Three.js 场景同步，默认右上后方）
-    const lightDir = new Vec3(-0.577, 1, -0.577).normalize();
+    // 4. 光源方向（从 UI 读取）
+    const ldx = parseFloat((document.getElementById('light-dir-x') as HTMLInputElement).value);
+    const ldy = parseFloat((document.getElementById('light-dir-y') as HTMLInputElement).value);
+    const ldz = parseFloat((document.getElementById('light-dir-z') as HTMLInputElement).value);
+    const lightDir = new Vec3(ldx, ldy, ldz).normalize();
 
     // 5. 配置光追引擎
     this.rayTracer.configure({
