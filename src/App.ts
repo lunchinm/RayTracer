@@ -7,6 +7,8 @@ import { RayCamera } from './raytracer/Camera';
 import { Vec3, Color } from './raytracer/Geometry';
 import { buildSceneData } from './raytracer/SceneBuilder';
 
+const SCENE_STORAGE_KEY = 'raytracer_scene';
+
 export class App {
   private scene!: Scene;
   private sceneEditor!: SceneEditor;
@@ -38,7 +40,9 @@ export class App {
     this.scene.onChange(() => this.onSceneChanged());
     this.scene.onSelectionChange(() => this.onSelectionChanged());
 
-    // 场景初始为空，用户自行添加物体
+    // 从 localStorage 恢复场景
+    this.loadScene();
+
     this.logger.info('RayTracer Web 初始化完成');
     this.setStatus('就绪 - 请添加物体');
   }
@@ -311,6 +315,7 @@ export class App {
   private onSceneChanged(): void {
     this.updateHierarchy();
     this.elStatusObjects.textContent = `物体: ${this.scene.objects.length}`;
+    this.saveScene();
   }
 
   /**
@@ -318,6 +323,27 @@ export class App {
    */
   private onSelectionChanged(): void {
     this.updateTransformPanel();
+  }
+
+  /* ==================== 场景持久化 ==================== */
+
+  private saveScene(): void {
+    try {
+      const data = { objects: this.scene.objects, idCounter: this.scene.idCounter };
+      localStorage.setItem(SCENE_STORAGE_KEY, JSON.stringify(data));
+    } catch { /* storage full or disabled */ }
+  }
+
+  private loadScene(): void {
+    try {
+      const raw = localStorage.getItem(SCENE_STORAGE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (data && Array.isArray(data.objects) && typeof data.idCounter === 'number') {
+        this.scene.restoreSnapshot(data.objects, data.idCounter);
+        this.logger.info(`恢复场景: ${data.objects.length} 个物体`);
+      }
+    } catch { /* corrupt data */ }
   }
 
   private updateHierarchy(): void {

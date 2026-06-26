@@ -3,7 +3,7 @@ import { GameObjectData } from './GameObject';
 export class Scene {
   objects: GameObjectData[] = [];
   selectedId: string | null = null;
-  private idCounter = 0;
+  private _idCounter = 0;
 
   private listeners: Array<() => void> = [];
   private selListeners: Array<() => void> = [];
@@ -24,14 +24,25 @@ export class Scene {
     for (const cb of this.selListeners) cb();
   }
 
+  /** 从快照恢复场景（用于 localStorage 持久化） */
+  restoreSnapshot(objects: GameObjectData[], nextId: number): void {
+    this.objects = objects;
+    this._idCounter = nextId;
+    this.selectedId = objects.length > 0 ? objects[objects.length - 1].id : null;
+    this.notify();
+    if (!this.selectedId) this.notifySelection();
+  }
+
+  get idCounter(): number { return this._idCounter; }
+
   addObject(type: GameObjectData['type'], name?: string): GameObjectData {
     const typeNames: Record<string, string> = {
       sphere: '球体', cube: '立方体', plane: '平面',
       cylinder: '圆柱', capsule: '胶囊体'
     };
     const obj: GameObjectData = {
-      id: `obj_${++this.idCounter}`,
-      name: name || `${typeNames[type]}_${this.idCounter}`,
+      id: `obj_${++this._idCounter}`,
+      name: name || `${typeNames[type]}_${this._idCounter}`,
       type,
       position: { x: 0, y: type === 'plane' ? -1 : 0, z: 0 },
       rotation: { x: 0, y: 0, z: 0 },
