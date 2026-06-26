@@ -102,8 +102,7 @@ export class RayTracer {
           pixelColor = this.tracePixel(x + 0.5, y + 0.5);
         }
 
-        // Y 轴翻转 (canvas 坐标原点在左上)
-        this.pixelBuffer[(h - 1 - y) * w + x] = pixelColor.clamp();
+        this.pixelBuffer[y * w + x] = pixelColor.clamp();
       }
 
       // 渐进式报告进度

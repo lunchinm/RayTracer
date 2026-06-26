@@ -371,10 +371,15 @@ export class SceneEditor {
   };
 
   /** 导出相机状态（供光追引擎使用） */
-  getCameraState(): { position: THREE.Vector3; target: THREE.Vector3; fov: number; aspect: number } {
+  getCameraState(): { position: THREE.Vector3; target: THREE.Vector3; up: THREE.Vector3; fov: number; aspect: number } {
+    // 从 Three.js 相机世界矩阵中提取真正的 up 向量（OrbitControls 会改变相机朝向）
+    this.camera.updateMatrixWorld();
+    const worldUp = new THREE.Vector3();
+    this.camera.matrixWorld.extractBasis(new THREE.Vector3(), worldUp, new THREE.Vector3());
     return {
       position: this.camera.position.clone(),
       target: this.orbitControls.target.clone(),
+      up: worldUp,
       fov: this.camera.fov,
       aspect: this.camera.aspect
     };

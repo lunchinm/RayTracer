@@ -407,7 +407,8 @@ export class App {
     const rayCam = new RayCamera(
       new Vec3(camState.position.x, camState.position.y, camState.position.z),
       camState.fov, camState.aspect,
-      new Vec3(camState.target.x, camState.target.y, camState.target.z)
+      new Vec3(camState.target.x, camState.target.y, camState.target.z),
+      new Vec3(camState.up.x, camState.up.y, camState.up.z)
     );
 
     // 3. 构建场景数据（GameObject → Triangles）
