@@ -60,8 +60,9 @@
 - 终止能量阈值
 
 #### 2.2 光照设置
-- 方向光：颜色、亮度、方向（通过 UI 控制）
+- 方向光：颜色、亮度、**方向 X/Y/Z**（通过 UI 滑块控制）
 - 环境光：颜色、强度
+- 光源方向滑块拖拽时 **Three.js 预览视口实时同步**
 
 #### 2.3 BVH 开关
 - 复选框：启用/禁用 BVH 加速结构
@@ -216,17 +217,22 @@ I = I_local + ks * I_reflect + kt * I_refract
 - [x] 实现射线-三角形求交（Möller-Trumbore 算法）
 - [x] 实现暴力场景遍历（所有三角形逐个测试，BVH 待 Phase 4）
 - [x] 实现 Phong 局部光照（环境光 + 漫反射 + 高光）
+- [x] 实现 Shadow Ray 阴影检测
 - [x] 实现反走样超采样（AA 1x/2x/4x/8x）
 - [x] 实现渐进式渲染（行级 yield，实时进度报告）
 - [x] 渲染结果输出到 Canvas + Gamma 校正
 - [x] R 键/按钮 启动渲染，保存 PNG 按钮
+- [x] 光源方向 X/Y/Z 滑块 + 实时预览同步
+- [x] 场景 + 渲染参数 localStorage 持久化（刷新保留）
+- [x] Three.js 相机同步到光追相机
+- [x] 递归弹射框架（dtraceRay 含 depth/weight/Russian Roulette）
 
 ### Phase 3：完整材质和光照 — 🔲 未开始
-- [ ] 实现镜面反射材质
-- [ ] 实现透明/折射材质
-- [ ] 实现 Shadow Ray 阴影
-- [ ] 实现多重弹射（递归深度）
-- [ ] 光照参数可配置
+- [ ] 实现递归镜面反射（`ks * I_reflect`）
+- [ ] 实现递归透明/折射（`kt * I_refract` + Snell + 全反射）
+- [x] ~~实现 Shadow Ray 阴影~~ → 已在 Phase 2 提前完成
+- [ ] 实现多重弹射（递归深度遍历，完整渲染方程）
+- [x] ~~光照参数可配置~~ → 方向光颜色/亮度/方向 + 环境光颜色/强度，实时滑块
 
 ### Phase 4：BVH 和 GPU 加速 — 🔲 未开始
 - [ ] 实现 BVH 加速结构
@@ -235,11 +241,18 @@ I = I_local + ks * I_reflect + kt * I_refract
 - [ ] GPU 开关 UI
 
 ### Phase 5：完善和部署 — 🔲 未开始
-- [ ] 反走样（AA）
-- [ ] 进度显示和日志
-- [ ] 保存 PNG 功能
-- [ ] GitHub Pages 部署配置
+- [x] ~~反走样（AA）~~ → 已在 Phase 2 提前完成（超采样）
+- [x] ~~进度显示和日志~~ → 已在 Phase 2 提前完成
+- [x] ~~保存 PNG 功能~~ → 已在 Phase 2 提前完成
+- [x] ~~GitHub Pages 部署配置~~ → 已在 Phase 1 完成
 - [ ] 响应式布局优化
+
+### 额外已实现
+- [x] 场景空启动（无默认演示物体）
+- [x] 新建物体默认白色 (#ffffff)
+- [x] 场景物体 localStorage 持久化（raytracer_scene）
+- [x] 渲染参数 localStorage 持久化（raytracer_settings，10项）
+- [x] 光源方向 Three.js 预览视口实时同步
 
 ### 状态图例
 
@@ -338,4 +351,4 @@ npm run preview  # 预览生产版本
 
 ---
 
-_最后更新：2026-06-26 15:10_
+_最后更新：2026-06-26 16:14_
