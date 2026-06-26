@@ -48,7 +48,7 @@ export class Scene {
       rotation: { x: 0, y: 0, z: 0 },
       scale: { x: 1, y: 1, z: 1 },
       materialType: 'diffuse',
-      color: '#8080c0',
+      color: '#ffffff',
       visible: true,
     };
     this.objects.push(obj);
