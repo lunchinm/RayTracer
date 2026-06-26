@@ -152,6 +152,7 @@ export class App {
     document.getElementById('light-dir-y-val')!.textContent = saved.lightDirY.toFixed(2);
     (document.getElementById('light-dir-z') as HTMLInputElement).value = String(saved.lightDirZ);
     document.getElementById('light-dir-z-val')!.textContent = saved.lightDirZ.toFixed(2);
+    this.sceneEditor.setLightDirection(saved.lightDirX, saved.lightDirY, saved.lightDirZ);
 
     const ambientIntensity = document.getElementById('ambient-intensity') as HTMLInputElement;
     ambientIntensity.value = String(saved.ambientIntensity);
@@ -188,16 +189,24 @@ export class App {
       persist();
     });
 
-    // 光源方向滑块
+    // 光源方向滑块 → 实时更新 Three.js 视口
     const lightDirX = document.getElementById('light-dir-x') as HTMLInputElement;
     const lightDirY = document.getElementById('light-dir-y') as HTMLInputElement;
     const lightDirZ = document.getElementById('light-dir-z') as HTMLInputElement;
     const lightDirXVal = document.getElementById('light-dir-x-val')!;
     const lightDirYVal = document.getElementById('light-dir-y-val')!;
     const lightDirZVal = document.getElementById('light-dir-z-val')!;
-    lightDirX.addEventListener('input', () => { lightDirXVal.textContent = parseFloat(lightDirX.value).toFixed(2); persist(); });
-    lightDirY.addEventListener('input', () => { lightDirYVal.textContent = parseFloat(lightDirY.value).toFixed(2); persist(); });
-    lightDirZ.addEventListener('input', () => { lightDirZVal.textContent = parseFloat(lightDirZ.value).toFixed(2); persist(); });
+    const updateLightDir = () => {
+      const x = parseFloat(lightDirX.value), y = parseFloat(lightDirY.value), z = parseFloat(lightDirZ.value);
+      lightDirXVal.textContent = x.toFixed(2);
+      lightDirYVal.textContent = y.toFixed(2);
+      lightDirZVal.textContent = z.toFixed(2);
+      this.sceneEditor.setLightDirection(x, y, z);
+      persist();
+    };
+    lightDirX.addEventListener('input', updateLightDir);
+    lightDirY.addEventListener('input', updateLightDir);
+    lightDirZ.addEventListener('input', updateLightDir);
 
     const ambientIntensityVal = document.getElementById('ambient-intensity-val')!;
     ambientIntensity.addEventListener('input', () => {

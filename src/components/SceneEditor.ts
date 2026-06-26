@@ -21,6 +21,9 @@ export class SceneEditor {
   private meshMap: Map<string, MeshMapEntry> = new Map();
   private dataScene: Scene;
 
+  // 方向光（供外部实时调节）
+  private dirLight!: THREE.DirectionalLight;
+
   // 坐标方向指示器（3D 渲染，跟随相机旋转，透明背景）
   private axesScene: THREE.Scene;
   private axesCamera: THREE.PerspectiveCamera;
@@ -75,17 +78,17 @@ export class SceneEditor {
     const ambient = new THREE.AmbientLight(0x888899, 0.5);
     this.scene3D.add(ambient);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-    dirLight.position.set(5, 10, 3);
-    dirLight.castShadow = true;
-    dirLight.shadow.mapSize.set(512, 512);
-    dirLight.shadow.camera.near = 0.5;
-    dirLight.shadow.camera.far = 50;
-    dirLight.shadow.camera.left = -15;
-    dirLight.shadow.camera.right = 15;
-    dirLight.shadow.camera.top = 15;
-    dirLight.shadow.camera.bottom = -15;
-    this.scene3D.add(dirLight);
+    this.dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    this.dirLight.position.set(5, 10, 3);
+    this.dirLight.castShadow = true;
+    this.dirLight.shadow.mapSize.set(512, 512);
+    this.dirLight.shadow.camera.near = 0.5;
+    this.dirLight.shadow.camera.far = 50;
+    this.dirLight.shadow.camera.left = -15;
+    this.dirLight.shadow.camera.right = 15;
+    this.dirLight.shadow.camera.top = 15;
+    this.dirLight.shadow.camera.bottom = -15;
+    this.scene3D.add(this.dirLight);
 
     // 地面
     const ground = new THREE.Mesh(
@@ -384,6 +387,13 @@ export class SceneEditor {
       fov: this.camera.fov,
       aspect: this.camera.aspect
     };
+  }
+
+  /** 实时更新方向光朝向（供 UI 滑块调用） */
+  setLightDirection(x: number, y: number, z: number): void {
+    const len = Math.sqrt(x * x + y * y + z * z) || 1;
+    const dist = 12;
+    this.dirLight.position.set(x / len * dist, y / len * dist, z / len * dist);
   }
 
   dispose(): void {
