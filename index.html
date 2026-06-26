@@ -13,15 +13,15 @@
       <div class="toolbar-left">
         <span class="app-title">RayTracer</span>
         <div class="add-objects">
-          <button id="btn-add-sphere" title="添加球体">⚫ 球体</button>
-          <button id="btn-add-cube" title="添加立方体">🟫 立方体</button>
-          <button id="btn-add-plane" title="添加平面">⬜ 平面</button>
-          <button id="btn-add-cylinder" title="添加圆柱">📏 圆柱</button>
-          <button id="btn-add-capsule" title="添加胶囊体">💊 胶囊体</button>
+          <button id="btn-add-sphere" title="添加球体">球体</button>
+          <button id="btn-add-cube" title="添加立方体">立方体</button>
+          <button id="btn-add-plane" title="添加平面">平面</button>
+          <button id="btn-add-cylinder" title="添加圆柱">圆柱</button>
+          <button id="btn-add-capsule" title="添加胶囊体">胶囊体</button>
         </div>
       </div>
       <div class="toolbar-right">
-        <button id="btn-render" class="btn-render" title="开始渲染 (R)">🎬 渲染 (R)</button>
+        <button id="btn-render" class="btn-render" title="开始渲染 (R)">渲染 (R)</button>
       </div>
     </div>
 
@@ -31,19 +31,19 @@
       <div id="scene-editor">
         <div id="viewport-container">
           <canvas id="viewport"></canvas>
-          <div id="viewport-hint">🖱 左键选择 | 右键旋转 | 滚轮缩放 | 中键平移</div>
+          <div id="viewport-hint">左键选择 | 右键旋转 | 滚轮缩放 | 中键平移</div>
         </div>
         <div id="scene-panels">
           <!-- 场景层级 -->
           <div class="panel" id="panel-hierarchy">
-            <div class="panel-header">📋 场景层级</div>
+            <div class="panel-header">场景层级</div>
             <div class="panel-content" id="hierarchy-list">
               <div class="empty-hint">场景为空，请添加物体</div>
             </div>
           </div>
           <!-- 材质面板 -->
           <div class="panel" id="panel-materials">
-            <div class="panel-header">🎨 材质</div>
+            <div class="panel-header">材质</div>
             <div class="panel-content" id="material-list">
               <div class="material-item draggable" data-material="diffuse">
                 <div class="material-preview diffuse-preview"></div>
@@ -61,7 +61,7 @@
           </div>
           <!-- 变换编辑 -->
           <div class="panel" id="panel-transform">
-            <div class="panel-header">📍 变换</div>
+            <div class="panel-header">变换</div>
             <div class="panel-content" id="transform-content">
               <div class="empty-hint">请选中一个物体</div>
             </div>
@@ -76,7 +76,7 @@
       <div id="render-panel">
         <div id="render-settings">
           <div class="panel">
-            <div class="panel-header">⚙️ 渲染设置</div>
+            <div class="panel-header">渲染设置</div>
             <div class="panel-content">
               <div class="setting-row">
                 <label>分辨率</label>
@@ -121,7 +121,7 @@
             </div>
           </div>
           <div class="panel">
-            <div class="panel-header">💡 光照设置</div>
+            <div class="panel-header">光照设置</div>
             <div class="panel-content">
               <div class="setting-row">
                 <label>方向光颜色</label>
@@ -147,15 +147,15 @@
 
         <div id="render-output">
           <div id="log-output">
-            <div class="panel-header">📜 日志</div>
+            <div class="panel-header">日志</div>
             <div id="log-content"></div>
           </div>
           <div id="result-container" style="display:none;">
-            <div class="panel-header">🖼 渲染结果</div>
+            <div class="panel-header">渲染结果</div>
             <div id="result-image-wrapper">
               <canvas id="result-canvas"></canvas>
             </div>
-            <button id="btn-save-image" style="display:none;">💾 保存图片</button>
+            <button id="btn-save-image" style="display:none;">保存图片</button>
           </div>
         </div>
       </div>

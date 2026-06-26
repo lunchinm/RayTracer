@@ -219,17 +219,17 @@ export class App {
       this.elHierarchy.innerHTML = '<div class="empty-hint">场景为空，请添加物体</div>';
       return;
     }
-    const typeIcons: Record<string, string> = {
-      sphere: '⚫', cube: '🟫', plane: '⬜', cylinder: '📏', capsule: '💊'
+    const typeLabels: Record<string, string> = {
+      sphere: '球', cube: '方', plane: '面', cylinder: '柱', capsule: '囊'
     };
     for (const obj of this.scene.objects) {
       const div = document.createElement('div');
       div.className = `hierarchy-item${obj.id === this.scene.selectedId ? ' selected' : ''}`;
       div.dataset.id = obj.id;
       div.innerHTML = `
-        <span class="type-icon">${typeIcons[obj.type] || '❓'}</span>
+        <span class="type-icon">[${typeLabels[obj.type] || '?'}]</span>
         <span class="item-name">${obj.name}</span>
-        <span class="item-delete" data-delete="${obj.id}">✕</span>
+        <span class="item-delete" data-delete="${obj.id}">x</span>
       `;
       div.addEventListener('click', (e) => {
         const deleteBtn = (e.target as HTMLElement).closest('.item-delete');

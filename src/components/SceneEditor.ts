@@ -44,8 +44,8 @@ export class SceneEditor {
 
     // 场景
     this.scene3D = new THREE.Scene();
-    this.scene3D.background = new THREE.Color(0x0a0a1a);
-    this.scene3D.fog = new THREE.Fog(0x0a0a1a, 20, 60);
+    this.scene3D.background = new THREE.Color(0xc8ccd4);
+    this.scene3D.fog = new THREE.Fog(0xc8ccd4, 20, 60);
 
     // 相机
     this.camera = new THREE.PerspectiveCamera(50, 2, 0.1, 100);
@@ -76,11 +76,11 @@ export class SceneEditor {
     this.mouse = new THREE.Vector2();
 
     // 网格
-    this.gridHelper = new THREE.GridHelper(20, 20, 0x333355, 0x1a1a33);
+    this.gridHelper = new THREE.GridHelper(20, 20, 0x999999, 0xcccccc);
     this.scene3D.add(this.gridHelper);
 
     // 环境光 + 方向光
-    const ambient = new THREE.AmbientLight(0x404060, 0.3);
+    const ambient = new THREE.AmbientLight(0x888899, 0.5);
     this.scene3D.add(ambient);
 
     const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
