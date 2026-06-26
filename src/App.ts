@@ -87,7 +87,60 @@ export class App {
 
   /* ==================== 渲染面板设置 ==================== */
 
+  private readonly RP_KEY = 'raytracer_settings';
+
   private setupRenderPanel(): void {
+    // --- 从 localStorage 恢复所有设置 ---
+    type RPSettings = {
+      resolution: string; maxDepth: number; aa: string; energy: number;
+      bvh: boolean; gpu: boolean;
+      lightColor: string; lightIntensity: number;
+      ambientColor: string; ambientIntensity: number;
+    };
+    const defaults: RPSettings = {
+      resolution: '640x480', maxDepth: 5, aa: '4', energy: 0.01,
+      bvh: true, gpu: false,
+      lightColor: '#ffffff', lightIntensity: 1.0,
+      ambientColor: '#404060', ambientIntensity: 0.3,
+    };
+    let saved: RPSettings;
+    try {
+      saved = { ...defaults, ...JSON.parse(localStorage.getItem(this.RP_KEY) || '{}') };
+    } catch {
+      saved = { ...defaults };
+    }
+    const persist = () => {
+      const s: RPSettings = {
+        resolution: (document.getElementById('setting-resolution') as HTMLSelectElement).value,
+        maxDepth: parseInt((document.getElementById('setting-max-depth') as HTMLInputElement).value) || 5,
+        aa: (document.getElementById('setting-aa') as HTMLSelectElement).value,
+        energy: parseFloat((document.getElementById('setting-energy') as HTMLInputElement).value) || 0.01,
+        bvh: (document.getElementById('setting-bvh') as HTMLInputElement).checked,
+        gpu: (document.getElementById('setting-gpu') as HTMLInputElement).checked,
+        lightColor: (document.getElementById('light-color') as HTMLInputElement).value,
+        lightIntensity: parseFloat((document.getElementById('light-intensity') as HTMLInputElement).value),
+        ambientColor: (document.getElementById('ambient-color') as HTMLInputElement).value,
+        ambientIntensity: parseFloat((document.getElementById('ambient-intensity') as HTMLInputElement).value),
+      };
+      localStorage.setItem(this.RP_KEY, JSON.stringify(s));
+    };
+
+    // 恢复值到控件
+    (document.getElementById('setting-resolution') as HTMLSelectElement).value = saved.resolution;
+    (document.getElementById('setting-max-depth') as HTMLInputElement).value = String(saved.maxDepth);
+    (document.getElementById('setting-aa') as HTMLSelectElement).value = saved.aa;
+    (document.getElementById('setting-energy') as HTMLInputElement).value = String(saved.energy);
+    (document.getElementById('light-color') as HTMLInputElement).value = saved.lightColor;
+    (document.getElementById('ambient-color') as HTMLInputElement).value = saved.ambientColor;
+
+    const lightIntensity = document.getElementById('light-intensity') as HTMLInputElement;
+    lightIntensity.value = String(saved.lightIntensity);
+    document.getElementById('light-intensity-val')!.textContent = saved.lightIntensity.toFixed(2);
+
+    const ambientIntensity = document.getElementById('ambient-intensity') as HTMLInputElement;
+    ambientIntensity.value = String(saved.ambientIntensity);
+    document.getElementById('ambient-intensity-val')!.textContent = saved.ambientIntensity.toFixed(2);
+
     // GPU 提示
     const gpuCheck = document.getElementById('setting-gpu') as HTMLInputElement;
     const gpuHint = document.getElementById('gpu-hint')!;
@@ -95,19 +148,34 @@ export class App {
       gpuCheck.disabled = true;
       gpuCheck.checked = false;
       gpuHint.textContent = '(浏览器不支持 WebGPU)';
+    } else {
+      gpuCheck.checked = saved.gpu;
     }
+    (document.getElementById('setting-bvh') as HTMLInputElement).checked = saved.bvh;
 
-    // 光照滑块
-    const lightIntensity = document.getElementById('light-intensity') as HTMLInputElement;
+    // --- 绑定 change 事件 → 自动持久化 ---
+    const onSettingChange = () => persist();
+    ['setting-resolution','setting-aa'].forEach(id => {
+      document.getElementById(id)?.addEventListener('change', onSettingChange);
+    });
+    ['setting-max-depth','setting-energy'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', onSettingChange);
+    });
+    ['setting-bvh','setting-gpu','light-color','ambient-color'].forEach(id => {
+      document.getElementById(id)?.addEventListener('change', onSettingChange);
+    });
+
+    // 光照滑块（更新显示 + 持久化）
     const lightIntensityVal = document.getElementById('light-intensity-val')!;
     lightIntensity.addEventListener('input', () => {
       lightIntensityVal.textContent = parseFloat(lightIntensity.value).toFixed(2);
+      persist();
     });
 
-    const ambientIntensity = document.getElementById('ambient-intensity') as HTMLInputElement;
     const ambientIntensityVal = document.getElementById('ambient-intensity-val')!;
     ambientIntensity.addEventListener('input', () => {
       ambientIntensityVal.textContent = parseFloat(ambientIntensity.value).toFixed(2);
+      persist();
     });
   }
 
