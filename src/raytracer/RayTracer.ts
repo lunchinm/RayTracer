@@ -26,6 +26,7 @@ export class RayTracer {
   private lightIntensity = 1.0;
   private ambientColor = new Color(0.25, 0.25, 0.38);
   private ambientIntensity = 0.3;
+  private shadowBias = 0.001; // 阴影偏移防止自交（shadow acne）
 
   private pixelBuffer: Color[] = [];
   private isRendering = false;
@@ -228,32 +229,61 @@ export class RayTracer {
     };
   }
 
-  /* ==================== Phong 局部光照 ==================== */
+  /* ==================== Phong 局部光照 (含阴影) ==================== */
 
   /**
-   * Phong 光照模型：I = ambient + diffuse + specular
-   * 参考 RayTracer.cs ComputeLocalIlluminationWithNormal()
+   * Phong 光照模型：I = ambient + shadowFactor * (diffuse + specular)
+   * 阴影射线：从表面点向光源方向发射，检查是否有遮挡
    */
   private computeLocalIllumination(
-    _hit: HitResult,
+    hit: HitResult,
     mat: RTMaterial,
     viewDir: Vec3,
     shadingNormal: Vec3
   ): Color {
-    // 环境光
+    // 环境光（不受阴影影响）
     let result = this.ambientColor.mul(mat.diffuseColor).mul(this.ambientIntensity);
 
-    // 方向光：漫反射 + 高光
-    const NdotL = Math.max(0, shadingNormal.dot(this.lightDir));
-    const diffuse = mat.diffuseColor.mul(this.lightColor).mul(this.lightIntensity * NdotL);
+    // 阴影测试：从表面点向光源发射射线
+    const inShadow = this.isInShadow(hit.point, shadingNormal);
 
-    const reflectDir = this.reflect(this.lightDir.negate(), shadingNormal);
-    const RdotV = Math.max(0, reflectDir.dot(viewDir.negate()));
-    const spec = Math.pow(RdotV, mat.shininess);
-    const specular = mat.specularColor.mul(this.lightColor).mul(this.lightIntensity * spec);
+    if (!inShadow) {
+      // 方向光：漫反射 + 高光
+      const NdotL = Math.max(0, shadingNormal.dot(this.lightDir));
+      const diffuse = mat.diffuseColor.mul(this.lightColor).mul(this.lightIntensity * NdotL);
 
-    result = result.add(diffuse).add(specular);
+      const reflectDir = this.reflect(this.lightDir.negate(), shadingNormal);
+      const RdotV = Math.max(0, reflectDir.dot(viewDir.negate()));
+      const spec = Math.pow(RdotV, mat.shininess);
+      const specular = mat.specularColor.mul(this.lightColor).mul(this.lightIntensity * spec);
+
+      result = result.add(diffuse).add(specular);
+    }
+
     return result;
+  }
+
+  /**
+   * 阴影射线检测：从表面点沿光源方向发射射线
+   * @returns true 如果点处于阴影中（有遮挡物）
+   */
+  private isInShadow(point: Vec3, normal: Vec3): boolean {
+    // 偏移起点防止 self-shadowing（shadow acne）
+    const origin = point.add(normal.mul(this.shadowBias));
+    const shadowRay = new Ray(origin, this.lightDir);
+
+    this.intersectionTests++;
+
+    for (let i = 0; i < this.triangles.length; i++) {
+      const tri = this.triangles[i];
+      const result = this.intersectTriangle(shadowRay, tri);
+      // 只要存在任何正距离交点，则该点在阴影中
+      if (result !== null && result.t > 1e-6) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /* ==================== 向量运算辅助 ==================== */
