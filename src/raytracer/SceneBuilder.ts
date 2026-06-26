@@ -124,7 +124,7 @@ function buildCube(
   return tris;
 }
 
-/** 生成平面三角形 */
+/** 生成平面三角形 (匹配 Three.js PlaneGeometry: XY 平面, 法线 +Z) */
 function buildPlane(
   position: Vec3, rot: { x: number; y: number; z: number },
   scale: Vec3, matIdx: number
@@ -133,13 +133,15 @@ function buildPlane(
   const rotM = buildRotationMatrix(toRad(rot.x), toRad(rot.y), toRad(rot.z));
   const s = 1.0; // 2×2 plane, half = 1
 
+  // Three.js PlaneGeometry(2,2) 顶点在 XY 平面 (z=0)
+  // 顺时针绕序 (从 +Z 看): 上左→下左→下右, 上左→下右→上右 → 法线 +Z
   const corners = [
-    new Vec3(-s, 0, -s), new Vec3(s, 0, -s),
-    new Vec3(-s, 0, s), new Vec3(s, 0, s),
+    new Vec3(-s, -s, 0), new Vec3( s, -s, 0),
+    new Vec3(-s,  s, 0), new Vec3( s,  s, 0),
   ].map(v => rotM.transform(v).mul(scale).add(position));
 
-  addTriangle(tris, corners[0], corners[1], corners[2], matIdx);
-  addTriangle(tris, corners[1], corners[3], corners[2], matIdx);
+  addTriangle(tris, corners[2], corners[0], corners[1], matIdx); // topL→botL→botR
+  addTriangle(tris, corners[2], corners[1], corners[3], matIdx); // topL→botR→topR
   return tris;
 }
 
