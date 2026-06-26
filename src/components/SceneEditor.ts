@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { Scene } from '../scene/Scene';
 import { GameObjectData } from '../scene/GameObject';
 
@@ -16,18 +15,11 @@ export class SceneEditor {
   private scene3D: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private orbitControls: OrbitControls;
-  private transformControls: TransformControls;
   private raycaster: THREE.Raycaster;
-  private mouse: THREE.Vector2;
   private gridHelper: THREE.GridHelper;
 
   private meshMap: Map<string, MeshMapEntry> = new Map();
   private dataScene: Scene;
-
-  // 状态
-  private isDragging = false;
-  private mouseDownPos = new THREE.Vector2();
-  private selectionOutline: THREE.LineSegments | null = null;
 
   constructor(container: HTMLElement, canvas: HTMLCanvasElement, dataScene: Scene) {
     this.container = container;
@@ -65,22 +57,9 @@ export class SceneEditor {
       RIGHT: THREE.MOUSE.ROTATE
     };
 
-    // TransformControls
-    this.transformControls = new TransformControls(this.camera, this.renderer.domElement);
-    this.transformControls.addEventListener('dragging-changed', (e: any) => {
-      const dragging = (e.target as TransformControls).dragging;
-      this.orbitControls.enabled = !dragging;
-      if (!dragging) {
-        // 延迟到下一帧确保 TransformControls 内部状态完全写入 Object3D
-        setTimeout(() => this.onTransformEnd(), 0);
-      }
-    });
-    this.scene3D.add(this.transformControls as unknown as THREE.Object3D);
-
-    // Raycaster
+    // Raycaster（点击选择用）
     this.raycaster = new THREE.Raycaster();
     this.raycaster.far = 100;
-    this.mouse = new THREE.Vector2();
 
     // 网格
     this.gridHelper = new THREE.GridHelper(20, 20, 0x999999, 0xcccccc);
@@ -113,21 +92,13 @@ export class SceneEditor {
     this.scene3D.add(ground);
 
     // 事件
-    this.setupEvents();
+    window.addEventListener('keydown', (e) => this.onKeyDown(e));
     this.setupResize();
     this.resize();
     this.render();
 
     // 监听场景数据变化 → 同步网格
     this.dataScene.onChange(() => this.syncScene());
-    // 监听选中变化 → 更新 TransformControls 附着（不在 syncScene 中处理，避免与 Gizmo 拖拽冲突）
-    this.dataScene.onSelectionChange(() => this.updateSelection());
-  }
-
-  private setupEvents(): void {
-    this.canvas.addEventListener('pointerdown', (e) => this.onPointerDown(e));
-    this.canvas.addEventListener('pointermove', (e) => this.onPointerMove(e));
-    window.addEventListener('keydown', (e) => this.onKeyDown(e));
   }
 
   private setupResize(): void {
@@ -146,15 +117,6 @@ export class SceneEditor {
   }
 
   /* ==================== 鼠标交互 ==================== */
-
-  private onPointerDown(e: PointerEvent): void {
-    this.mouseDownPos.set(e.clientX, e.clientY);
-    this.isDragging = false;
-  }
-
-  private onPointerMove(_e: PointerEvent): void {
-    // 保留扩展
-  }
 
   getCanvasPoint(event: MouseEvent): THREE.Vector2 {
     const rect = this.canvas.getBoundingClientRect();
@@ -191,32 +153,6 @@ export class SceneEditor {
         this.dataScene.removeObject(sel.id);
       }
     }
-    if (e.key === 'w' && !e.ctrlKey) {
-      this.transformControls.setMode('translate');
-    }
-    if (e.key === 'e') {
-      this.transformControls.setMode('rotate');
-    }
-    if (e.key === 'r' && !e.ctrlKey) {
-      this.transformControls.setMode('scale');
-    }
-  }
-
-  /* ==================== 变换结束同步 ==================== */
-
-  private onTransformEnd(): void {
-    const sel = this.dataScene.getSelected();
-    if (!sel) return;
-    const entry = this.meshMap.get(sel.id);
-    if (!entry) return;
-    const t = entry.object3D;
-    this.dataScene.updateTransform(sel.id,
-      { x: parseFloat(t.position.x.toFixed(3)), y: parseFloat(t.position.y.toFixed(3)), z: parseFloat(t.position.z.toFixed(3)) },
-      { x: parseFloat(THREE.MathUtils.radToDeg(t.rotation.x).toFixed(1)), y: parseFloat(THREE.MathUtils.radToDeg(t.rotation.y).toFixed(1)), z: parseFloat(THREE.MathUtils.radToDeg(t.rotation.z).toFixed(1)) },
-      { x: parseFloat(t.scale.x.toFixed(2)), y: parseFloat(t.scale.y.toFixed(2)), z: parseFloat(t.scale.z.toFixed(2)) }
-    );
-    // 通知 App 同步变换面板数值（不重建DOM）
-    window.dispatchEvent(new CustomEvent('scene-transform-updated'));
   }
 
   /* ==================== 场景同步 ==================== */
@@ -331,29 +267,6 @@ export class SceneEditor {
         mat.needsUpdate = true;
       }
     });
-  }
-
-  private updateSelection(): void {
-    // 更新 TransformControls
-    const sel = this.dataScene.getSelected();
-    if (sel) {
-      const entry = this.meshMap.get(sel.id);
-      if (entry && this.transformControls.object !== entry.object3D) {
-        this.transformControls.attach(entry.object3D);
-      }
-    } else {
-      this.transformControls.detach();
-    }
-  }
-
-  /* ==================== Transform 模式切换 ==================== */
-
-  setTransformMode(mode: 'translate' | 'rotate' | 'scale'): void {
-    this.transformControls.setMode(mode);
-  }
-
-  getTransformMode(): string {
-    return this.transformControls.mode;
   }
 
   /* ==================== 渲染循环 ==================== */

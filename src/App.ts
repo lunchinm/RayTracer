@@ -31,9 +31,6 @@ export class App {
     this.scene.onChange(() => this.onSceneChanged());
     this.scene.onSelectionChange(() => this.onSelectionChanged());
 
-    // 监听 Gizmo 变换完成事件（同步面板数值，不重建）
-    window.addEventListener('scene-transform-updated', () => this.refreshTransformValues());
-
     // 默认添加几个演示物体
     this.scene.addObject('sphere', '球体_演示');
     const cube = this.scene.addObject('cube', '立方体_演示');
@@ -250,35 +247,6 @@ export class App {
    */
   private onSelectionChanged(): void {
     this.updateTransformPanel();
-  }
-
-  /**
-   * Gizmo 拖拽完成 → 同步数值到已存在的输入框（不重建DOM）
-   */
-  private refreshTransformValues(): void {
-    const sel = this.scene.getSelected();
-    if (!sel) return;
-    const panel = this.elTransform;
-    // 检查面板当前是否对应选中物体
-    const firstInput = panel.querySelector('input[data-field="pos.x"]');
-    if (!firstInput) return; // 面板内容不对（无选中/hint），跳过
-
-    const setVal = (field: string, val: number) => {
-      const inp = panel.querySelector(`input[data-field="${field}"]`) as HTMLInputElement;
-      if (inp) inp.value = val.toFixed(field.startsWith('rot') ? 1 : field.startsWith('scl') ? 2 : 3);
-    };
-    setVal('pos.x', sel.position.x);
-    setVal('pos.y', sel.position.y);
-    setVal('pos.z', sel.position.z);
-    setVal('rot.x', sel.rotation.x);
-    setVal('rot.y', sel.rotation.y);
-    setVal('rot.z', sel.rotation.z);
-    setVal('scl.x', sel.scale.x);
-    setVal('scl.y', sel.scale.y);
-    setVal('scl.z', sel.scale.z);
-    // 颜色
-    const colorInp = panel.querySelector('input[data-field="color"]') as HTMLInputElement;
-    if (colorInp) colorInp.value = sel.color;
   }
 
   private updateHierarchy(): void {
