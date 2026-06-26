@@ -21,11 +21,8 @@ export class SceneEditor {
   private meshMap: Map<string, MeshMapEntry> = new Map();
   private dataScene: Scene;
 
-  // 坐标方向指示器
-  private axesScene: THREE.Scene;
-  private axesCamera: THREE.PerspectiveCamera;
-  private viewportWidth = 0;
-  private viewportHeight = 0;
+  // 坐标方向指示器（CSS 独立叠加层）
+  private axesOverlay: HTMLElement;
 
   constructor(container: HTMLElement, canvas: HTMLCanvasElement, dataScene: Scene) {
     this.container = container;
@@ -97,12 +94,30 @@ export class SceneEditor {
     ground.receiveShadow = true;
     this.scene3D.add(ground);
 
-    // 坐标方向指示器（单独场景，渲染到右上角）
-    this.axesScene = new THREE.Scene();
-    this.axesCamera = new THREE.PerspectiveCamera(50, 1, 0.1, 10);
-    this.axesCamera.position.set(0, 0, 2.5);
-    this.axesCamera.lookAt(0, 0, 0);
-    this.buildAxesGizmo();
+    // 坐标方向指示器（纯 CSS 叠加层，独立于 3D 场景）
+    this.axesOverlay = document.createElement('div');
+    this.axesOverlay.className = 'axes-overlay';
+    this.axesOverlay.innerHTML = `
+      <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrow-x" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0,0 6,3 0,6" fill="#ff4444"/></marker>
+          <marker id="arrow-y" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0,0 6,3 0,6" fill="#44cc44"/></marker>
+          <marker id="arrow-z" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0,0 6,3 0,6" fill="#4488ff"/></marker>
+        </defs>
+        <!-- 原点 -->
+        <circle cx="26" cy="30" r="3" fill="#dddddd" stroke="#999999" stroke-width="0.5"/>
+        <!-- X 轴（正右）- 红色 -->
+        <line x1="26" y1="30" x2="48" y2="30" stroke="#ff4444" stroke-width="2.5" stroke-linecap="round" marker-end="url(#arrow-x)"/>
+        <!-- Y 轴（正上）- 绿色 -->
+        <line x1="26" y1="30" x2="26" y2="8" stroke="#44cc44" stroke-width="2.5" stroke-linecap="round" marker-end="url(#arrow-y)"/>
+        <!-- Z 轴（右下=屏幕外）- 蓝色 -->
+        <line x1="26" y1="30" x2="14" y2="44" stroke="#4488ff" stroke-width="2.5" stroke-linecap="round" marker-end="url(#arrow-z)"/>
+        <!-- 标签 -->
+        <text x="52" y="34" fill="#ff4444" font-size="9" font-weight="bold" font-family="sans-serif">X</text>
+        <text x="29" y="11" fill="#44cc44" font-size="9" font-weight="bold" font-family="sans-serif" text-anchor="middle">Y</text>
+        <text x="7" y="50" fill="#4488ff" font-size="9" font-weight="bold" font-family="sans-serif">Z</text>
+      </svg>`;
+    this.container.appendChild(this.axesOverlay);
 
     // 事件
     window.addEventListener('keydown', (e) => this.onKeyDown(e));
@@ -124,8 +139,6 @@ export class SceneEditor {
     const w = rect.width;
     const h = rect.height;
     if (w <= 0 || h <= 0) return;
-    this.viewportWidth = w;
-    this.viewportHeight = h;
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
@@ -284,65 +297,12 @@ export class SceneEditor {
     });
   }
 
-  /* ==================== 坐标指示器 ==================== */
-
-  private buildAxesGizmo(): void {
-    const arrowLen = 0.7;
-    const headLen = 0.18;
-    const headW = 0.08;
-
-    // X 轴 - 红色
-    this.axesScene.add(new THREE.ArrowHelper(
-      new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 0),
-      arrowLen + headLen, 0xff4444, headLen, headW
-    ));
-
-    // Y 轴 - 绿色
-    this.axesScene.add(new THREE.ArrowHelper(
-      new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0),
-      arrowLen + headLen, 0x44ff44, headLen, headW
-    ));
-
-    // Z 轴 - 蓝色
-    this.axesScene.add(new THREE.ArrowHelper(
-      new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0),
-      arrowLen + headLen, 0x4488ff, headLen, headW
-    ));
-
-    // 原点小球
-    const dotGeom = new THREE.SphereGeometry(0.06, 16, 16);
-    const dotMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    this.axesScene.add(new THREE.Mesh(dotGeom, dotMat));
-  }
-
   /* ==================== 渲染循环 ==================== */
 
   private render = (): void => {
     requestAnimationFrame(this.render);
     this.orbitControls.update();
-
-    // 主场景渲染
-    this.renderer.autoClear = true;
     this.renderer.render(this.scene3D, this.camera);
-
-    // 右上角坐标方向指示器
-    if (this.viewportWidth > 0 && this.viewportHeight > 0) {
-      const margin = 12;
-      const gizmoSize = Math.round(Math.min(this.viewportWidth, this.viewportHeight) * 0.14);
-      const x = this.viewportWidth - gizmoSize - margin;
-      const y = this.viewportHeight - gizmoSize - margin;
-
-      this.axesCamera.quaternion.copy(this.camera.quaternion);
-
-      this.renderer.autoClear = false;
-      this.renderer.setViewport(x, y, gizmoSize, gizmoSize);
-      this.renderer.setScissor(x, y, gizmoSize, gizmoSize);
-      this.renderer.setScissorTest(true);
-      this.renderer.clearDepth();
-      this.renderer.render(this.axesScene, this.axesCamera);
-      this.renderer.setScissorTest(false);
-      this.renderer.setViewport(0, 0, this.viewportWidth, this.viewportHeight);
-    }
   };
 
   dispose(): void {
