@@ -128,7 +128,8 @@ RayTracer/
 | 构建工具 | Vite | 快速 HMR，原生 TS 支持 |
 | 3D 视口 | Three.js | 成熟、文档丰富、支持拖拽交互 |
 | UI 布局 | 自定义 CSS + HTML | 轻量，左右分栏布局 |
-| CPU 光追 | 纯 TypeScript | 易调试，WASM 可后续优化 |
+| CPU 光追 | 纯 TypeScript（先用） | 易调试，开发速度快，课程作业 320×240 分辨率够用 |
+| WASM 优化 | 后续按需加入（C++ → WASM） | 性能提升 5-10 倍，TypeScript 逻辑可直接迁移 |
 | GPU 光追 | WebGPU API | 现代标准，Compute Shader 支持 |
 | 部署 | GitHub Pages | 免费，直接通过链接访问 |
 
@@ -283,10 +284,10 @@ npm run preview  # 预览生产版本
 
 ## 注意事项
 
-1. **WebGPU 兼容性**：目前仅 Chrome/Edge 稳定支持，Safari 实验性支持。需要降级方案。
-2. **大场景性能**：纯 TypeScript CPU 光追在浏览器中性能有限，建议分辨率先从 320×240 起步。
+1. **WebGPU 兼容性**：目前仅 Chrome/Edge 稳定支持，Safari 实验性支持。需要降级方案（回退 CPU）。
+2. **性能预期**：纯 TypeScript CPU 光追在浏览器中性能有限，建议分辨率先从 320×240 起步，用于课程作业演示足够。
 3. **渐进式渲染**：为了避免页面卡死，需要分块渲染（requestAnimationFrame 或 Web Worker）。
-4. **WASM 优化**：后续可将光追核心用 C++ 编译为 WASM，提升性能 5-10 倍。
+4. **WASM 优化（后续按需）**：若 TypeScript 版本性能不足，可将光追核心用 C++ 编写并编译为 WASM，性能提升 5-10 倍。TypeScript 逻辑可直接映射到 C++，迁移成本低。
 
 ---
 
