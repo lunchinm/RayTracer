@@ -42,9 +42,14 @@
 - 三种材质类型：
   - **漫反射（Diffuse）**：颜色、漫反射系数
   - **镜面反射（Specular/Mirror）**：颜色、反射率、光泽度
-  - **透明（Transparent）**：颜色、折射率、IOR、吸收颜色
+  - **透明（Transparent）**：颜色、折射率、IOR、吸收颜色、**反射率**（Fresnel 效应，侧面更反射）
 - 材质面板：可拖拽材质到物体上
 - 支持修改物体颜色（独立于此材质系统，快速改色）
+- **Three.js 预览视口中的材质视觉效果**（非光追，仅用于编辑预览）：
+  - 漫反射：`MeshLambertMaterial`，显示受光照影响的平坦颜色
+  - 镜面反射：`MeshStandardMaterial({ metalness: 1, roughness: 0 })` + 环境贴图，呈现镜面高光
+  - 透明：`MeshPhysicalMaterial({ transmission: 0.9, roughness: 0 })` 或 `transparent: true + opacity`，模拟折射效果
+  - 目的：让用户在未启用光追渲染时，也能直观区分不同材质类型
 
 ### 2. 渲染设置（右栏 - 常规模式）
 
@@ -266,6 +271,7 @@ npm run preview  # 预览生产版本
 | C# 代码 | TypeScript 对应 |
 |---------|----------------|
 | `RayTracer.cs` | `src/raytracer/RayTracer.ts` |
+- **透明材质反射率**：透明物体也支持 `reflectivity` 参数，通过 Fresnel 效应实现（正面看透明，侧面看反射），Schlick 近似计算
 | `RayTracingMaterial.cs` | `src/raytracer/Material.ts` |
 | `Triangle` 结构体 | `src/raytracer/Geometry.ts` |
 | `BVHNode` 类 | `src/raytracer/BVH.ts` |
