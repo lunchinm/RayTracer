@@ -31,8 +31,9 @@
       <div id="scene-editor">
         <div id="viewport-container">
           <canvas id="viewport"></canvas>
-          <div id="viewport-hint">左键选择 | 右键旋转 | 滚轮缩放 | 中键平移</div>
+          <div id="viewport-hint">左键选择 | 右键旋转 | 中键缩放 | 滚轮缩放</div>
         </div>
+        <div id="hdivider"></div>
         <div id="scene-panels">
           <!-- 场景层级 -->
           <div class="panel" id="panel-hierarchy">
@@ -46,15 +47,12 @@
             <div class="panel-header">材质</div>
             <div class="panel-content" id="material-list">
               <div class="material-item draggable" data-material="diffuse">
-                <div class="material-preview diffuse-preview"></div>
                 <span>漫反射</span>
               </div>
               <div class="material-item draggable" data-material="specular">
-                <div class="material-preview specular-preview"></div>
                 <span>镜面反射</span>
               </div>
               <div class="material-item draggable" data-material="transparent">
-                <div class="material-preview transparent-preview"></div>
                 <span>透明</span>
               </div>
             </div>

@@ -52,13 +52,19 @@ export class SceneEditor {
     this.camera.position.set(5, 3, 7);
     this.camera.lookAt(0, 0, 0);
 
-    // OrbitControls
+    // OrbitControls - 左右键交换：左键选择，右键旋转
     this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
     this.orbitControls.enableDamping = true;
     this.orbitControls.dampingFactor = 0.08;
     this.orbitControls.target.set(0, 0, 0);
     this.orbitControls.minDistance = 1;
     this.orbitControls.maxDistance = 30;
+    // 重映射：LEFT=不操作(留给选择), RIGHT=旋转, MIDDLE=缩放
+    this.orbitControls.mouseButtons = {
+      LEFT: null as any,
+      MIDDLE: THREE.MOUSE.DOLLY,
+      RIGHT: THREE.MOUSE.ROTATE
+    };
 
     // TransformControls
     this.transformControls = new TransformControls(this.camera, this.renderer.domElement);
@@ -206,6 +212,8 @@ export class SceneEditor {
       { x: parseFloat(THREE.MathUtils.radToDeg(t.rotation.x).toFixed(1)), y: parseFloat(THREE.MathUtils.radToDeg(t.rotation.y).toFixed(1)), z: parseFloat(THREE.MathUtils.radToDeg(t.rotation.z).toFixed(1)) },
       { x: parseFloat(t.scale.x.toFixed(2)), y: parseFloat(t.scale.y.toFixed(2)), z: parseFloat(t.scale.z.toFixed(2)) }
     );
+    // 通知 App 同步变换面板数值（不重建DOM）
+    window.dispatchEvent(new CustomEvent('scene-transform-updated'));
   }
 
   /* ==================== 场景同步 ==================== */

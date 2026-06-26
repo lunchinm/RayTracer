@@ -121,12 +121,13 @@ html, body {
   overflow: hidden;
 }
 
+/* ========== 视口 ========== */
 #viewport-container {
   flex: 1;
   position: relative;
   background: #c8ccd4;
   overflow: hidden;
-  min-height: 300px;
+  min-height: 200px;
 }
 
 #viewport {
@@ -144,6 +145,19 @@ html, body {
   pointer-events: none;
 }
 
+/* 水平分割线（上下拖拽调节下方面板高度） */
+#hdivider {
+  height: 4px;
+  background: var(--border);
+  cursor: row-resize;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+#hdivider:hover {
+  background: var(--accent);
+}
+
 /* 底部面板区 */
 #scene-panels {
   display: flex;
@@ -151,6 +165,7 @@ html, body {
   background: var(--border);
   height: 200px;
   flex-shrink: 0;
+  min-height: 100px;
 }
 
 .panel {
@@ -238,19 +253,20 @@ html, body {
 .material-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
+  padding: 8px 10px;
   border-radius: 4px;
   cursor: grab;
   font-size: 12px;
   margin-bottom: 4px;
-  border: 1px solid transparent;
+  border: 1px solid var(--border);
   transition: all 0.15s;
+  background: var(--bg-panel);
 }
 
 .material-item:hover {
-  background: rgba(0,0,0,0.04);
-  border-color: var(--border);
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
 }
 
 .material-item:active {
@@ -261,43 +277,23 @@ html, body {
   opacity: 0.5;
 }
 
-.material-preview {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-
-.diffuse-preview {
-  background: linear-gradient(135deg, #ff6b6b, #ffa502);
-}
-
-.specular-preview {
-  background: linear-gradient(135deg, #a0a0a0, #e0e0e0, #ffffff);
-}
-
-.transparent-preview {
-  background: linear-gradient(135deg, rgba(100,200,255,0.4), rgba(200,230,255,0.7));
-  border: 1px dashed rgba(255,255,255,0.5);
-}
-
 /* ========== 变换面板 ========== */
 .transform-row {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-bottom: 6px;
+  gap: 2px;
+  margin-bottom: 3px;
 }
 
 .transform-row label {
-  width: 24px;
+  width: 18px;
   font-size: 11px;
   color: var(--text-secondary);
   text-align: right;
   flex-shrink: 0;
 }
 
-.transform-row input {
+.transform-row input[type="number"] {
   width: 100%;
   padding: 2px 4px;
   border: 1px solid var(--border);
@@ -306,22 +302,34 @@ html, body {
   border-radius: 3px;
   font-size: 11px;
   text-align: center;
+  min-width: 0;
 }
 
-.transform-row input:focus {
+.transform-row input[type="number"]:focus {
   outline: none;
   border-color: var(--accent);
 }
 
+.transform-row input[type="color"] {
+  width: 100%;
+  height: 24px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  background: var(--bg-input);
+  padding: 1px;
+}
+
 .transform-section {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .transform-section h4 {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-secondary);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* ========== 分割线 ========== */

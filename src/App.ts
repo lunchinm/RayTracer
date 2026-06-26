@@ -29,6 +29,10 @@ export class App {
 
     // 初始化场景监听
     this.scene.onChange(() => this.onSceneChanged());
+    this.scene.onSelectionChange(() => this.onSelectionChanged());
+
+    // 监听 Gizmo 变换完成事件（同步面板数值，不重建）
+    window.addEventListener('scene-transform-updated', () => this.refreshTransformValues());
 
     // 默认添加几个演示物体
     this.scene.addObject('sphere', '球体_演示');
@@ -183,34 +187,95 @@ export class App {
   /* ==================== 分割线拖拽 ==================== */
 
   private setupDivider(): void {
-    const divider = document.getElementById('divider')!;
-    const renderPanel = document.getElementById('render-panel')!;
-    let dragging = false;
+    // 统一拖拽状态管理（左右分割线 / 上下分割线互斥）
+    let dragTarget: 'vertical' | 'horizontal' | null = null;
 
-    divider.addEventListener('pointerdown', (e) => {
-      dragging = true;
-      divider.setPointerCapture(e.pointerId);
+    // 左右分割线
+    const vdivider = document.getElementById('divider')!;
+    const renderPanel = document.getElementById('render-panel')!;
+
+    vdivider.addEventListener('pointerdown', (e) => {
+      dragTarget = 'vertical';
+      vdivider.setPointerCapture(e.pointerId);
+    });
+
+    // 上下分割线
+    const hdivider = document.getElementById('hdivider')!;
+    const scenePanels = document.getElementById('scene-panels')!;
+
+    hdivider.addEventListener('pointerdown', (e) => {
+      dragTarget = 'horizontal';
+      hdivider.setPointerCapture(e.pointerId);
     });
 
     window.addEventListener('pointermove', (e) => {
-      if (!dragging) return;
-      const main = document.getElementById('main-container')!;
-      const rect = main.getBoundingClientRect();
-      const newWidth = Math.max(240, Math.min(500, rect.right - e.clientX));
-      renderPanel.style.width = `${newWidth}px`;
+      if (!dragTarget) return;
+      if (dragTarget === 'vertical') {
+        const main = document.getElementById('main-container')!;
+        const rect = main.getBoundingClientRect();
+        const newWidth = Math.max(240, Math.min(500, rect.right - e.clientX));
+        renderPanel.style.width = `${newWidth}px`;
+      } else {
+        const main = document.getElementById('main-container')!;
+        const mainRect = main.getBoundingClientRect();
+        // 面板高度 = 主容器底部 - 鼠标位置
+        const newHeight = Math.max(80, Math.min(500, mainRect.bottom - e.clientY));
+        scenePanels.style.height = `${newHeight}px`;
+        // 触发 ResizeObserver 重新计算 3D 视口
+        window.dispatchEvent(new Event('resize'));
+      }
     });
 
     window.addEventListener('pointerup', () => {
-      dragging = false;
+      dragTarget = null;
     });
   }
 
   /* ==================== 场景变化回调 ==================== */
 
+  /**
+   * 场景数据变化（增/删/变换）- 仅更新层级和计数，不重建变换面板
+   * 变换面板仅在选中对象变化时重建，避免输入被覆盖
+   */
   private onSceneChanged(): void {
     this.updateHierarchy();
-    this.updateTransformPanel();
     this.elStatusObjects.textContent = `物体: ${this.scene.objects.length}`;
+  }
+
+  /**
+   * 选中对象变化 - 重建变换面板（唯一重建入口）
+   */
+  private onSelectionChanged(): void {
+    this.updateTransformPanel();
+  }
+
+  /**
+   * Gizmo 拖拽完成 → 同步数值到已存在的输入框（不重建DOM）
+   */
+  private refreshTransformValues(): void {
+    const sel = this.scene.getSelected();
+    if (!sel) return;
+    const panel = this.elTransform;
+    // 检查面板当前是否对应选中物体
+    const firstInput = panel.querySelector('input[data-field="pos.x"]');
+    if (!firstInput) return; // 面板内容不对（无选中/hint），跳过
+
+    const setVal = (field: string, val: number) => {
+      const inp = panel.querySelector(`input[data-field="${field}"]`) as HTMLInputElement;
+      if (inp) inp.value = val.toFixed(field.startsWith('rot') ? 1 : field.startsWith('scl') ? 2 : 3);
+    };
+    setVal('pos.x', sel.position.x);
+    setVal('pos.y', sel.position.y);
+    setVal('pos.z', sel.position.z);
+    setVal('rot.x', sel.rotation.x);
+    setVal('rot.y', sel.rotation.y);
+    setVal('rot.z', sel.rotation.z);
+    setVal('scl.x', sel.scale.x);
+    setVal('scl.y', sel.scale.y);
+    setVal('scl.z', sel.scale.z);
+    // 颜色
+    const colorInp = panel.querySelector('input[data-field="color"]') as HTMLInputElement;
+    if (colorInp) colorInp.value = sel.color;
   }
 
   private updateHierarchy(): void {

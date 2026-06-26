@@ -6,13 +6,22 @@ export class Scene {
   private idCounter = 0;
 
   private listeners: Array<() => void> = [];
+  private selListeners: Array<() => void> = [];
 
   onChange(cb: () => void) {
     this.listeners.push(cb);
   }
 
+  onSelectionChange(cb: () => void) {
+    this.selListeners.push(cb);
+  }
+
   private notify() {
     for (const cb of this.listeners) cb();
+  }
+
+  private notifySelection() {
+    for (const cb of this.selListeners) cb();
   }
 
   addObject(type: GameObjectData['type'], name?: string): GameObjectData {
@@ -49,6 +58,7 @@ export class Scene {
 
   selectObject(id: string | null): void {
     this.selectedId = id;
+    this.notifySelection();
     this.notify();
   }
 
