@@ -287,19 +287,20 @@ export class SceneEditor {
 
   private buildAxesGizmo(): void {
     const len = 0.7, headLen = 0.18, headW = 0.08;
+    const tip = len + headLen; // 0.88
 
     // X（红）Y（绿）Z（蓝）三色箭头
     this.axesScene.add(new THREE.ArrowHelper(
       new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 0),
-      len + headLen, 0xff4444, headLen, headW
+      tip, 0xff4444, headLen, headW
     ));
     this.axesScene.add(new THREE.ArrowHelper(
       new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0),
-      len + headLen, 0x44cc44, headLen, headW
+      tip, 0x44cc44, headLen, headW
     ));
     this.axesScene.add(new THREE.ArrowHelper(
       new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0),
-      len + headLen, 0x4488ff, headLen, headW
+      tip, 0x4488ff, headLen, headW
     ));
 
     // 原点白色小球
@@ -307,6 +308,33 @@ export class SceneEditor {
       new THREE.SphereGeometry(0.06, 16, 16),
       new THREE.MeshBasicMaterial({ color: 0xffffff })
     ));
+
+    // XYZ 文字标签（Sprite）
+    const labelOffset = 0.15;
+    this.axesScene.add(this.makeLabel('X', '#ff4444', new THREE.Vector3( tip + labelOffset, 0, 0)));
+    this.axesScene.add(this.makeLabel('Y', '#44cc44', new THREE.Vector3( 0, tip + labelOffset, 0)));
+    this.axesScene.add(this.makeLabel('Z', '#4488ff', new THREE.Vector3( 0, 0, tip + labelOffset)));
+  }
+
+  private makeLabel(text: string, color: string, position: THREE.Vector3): THREE.Sprite {
+    const size = 128;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = color;
+    ctx.font = 'bold 72px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, size / 2, size / 2);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.LinearFilter;
+    const material = new THREE.SpriteMaterial({ map: texture, depthTest: false, depthWrite: false });
+    const sprite = new THREE.Sprite(material);
+    sprite.position.copy(position);
+    sprite.scale.set(0.35, 0.35, 1);
+    return sprite;
   }
 
   /* ==================== 渲染循环 ==================== */
