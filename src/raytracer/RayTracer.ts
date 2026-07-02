@@ -33,8 +33,8 @@ export class RayTracer {
   private totalRays = 0;
   private intersectionTests = 0;
 
-  // 调试：首次光照计算日志
-  private debugLitOnce = true;
+  // 调试：高光像素追踪
+  private debugSpecPixels: Array<{px:number; py:number; N:Vec3; L:Vec3; V:Vec3; R:Vec3; RdotV:number; spec:number}> = [];
 
   // 回调
   onProgress?: (percent: number, rays: number, tests: number) => void;
@@ -119,6 +119,19 @@ export class RayTracer {
 
     this.isRendering = false;
 
+    // 输出高光像素诊断
+    if (this.debugSpecPixels.length > 0) {
+      console.log(`[RT Debug] 找到 ${this.debugSpecPixels.length} 个高光像素 (spec > 0.05):`);
+      for (const p of this.debugSpecPixels) {
+        console.log(`  像素(${p.px}, ${p.py}) spec=${p.spec.toFixed(4)} R·V=${p.RdotV.toFixed(3)}`);
+        console.log(`    N=(${p.N.x.toFixed(3)},${p.N.y.toFixed(3)},${p.N.z.toFixed(3)}) L=(${p.L.x.toFixed(3)},${p.L.y.toFixed(3)},${p.L.z.toFixed(3)}) V=(${p.V.x.toFixed(3)},${p.V.y.toFixed(3)},${p.V.z.toFixed(3)}) R=(${p.R.x.toFixed(3)},${p.R.y.toFixed(3)},${p.R.z.toFixed(3)})`);
+      }
+      // 额外：报告图像尺寸和相机位置参考
+      console.log(`[RT Debug] 图像尺寸: ${this.renderWidth}x${this.renderHeight}  相机位置: (${this.camera!.position.x.toFixed(2)}, ${this.camera!.position.y.toFixed(2)}, ${this.camera!.position.z.toFixed(2)})`);
+    } else {
+      console.warn('[RT Debug] 未找到任何高光像素 (spec > 0.05)！可能 shininess 过高或光源/视线夹角过大');
+    }
+
     // 生成 ImageData
     return this.toImageData();
   }
@@ -134,7 +147,7 @@ export class RayTracer {
     const vpY = py / this.renderHeight; // 0=top
     const ray = this.camera!.getRay(vpX, vpY);
     this.totalRays++;
-    return this.traceRay(ray, this.maxDepth, Color.white());
+    return this.traceRay(ray, this.maxDepth, Color.white(), px, py);
   }
 
   /* ==================== 核心递归 ==================== */
@@ -143,7 +156,7 @@ export class RayTracer {
    * traceRay(ray, depth, weight)
    * Phase 3: 完整渲染方程 I = I_local + ks * I_reflect + kt * I_refract
    */
-  private traceRay(ray: Ray, depth: number, weight: Color): Color {
+  private traceRay(ray: Ray, depth: number, weight: Color, px: number = -1, py: number = -1): Color {
     // 能量衰减终止
     if (weight.sum() < this.energyThreshold) return Color.black();
 
@@ -169,7 +182,7 @@ export class RayTracer {
     const cosTheta = Math.min(1, Math.max(0, viewDir.dot(shadingNormal)));
 
     // ========== 1. 局部光照 ==========
-    let result = this.computeLocalIllumination(hit, mat, viewDir, shadingNormal);
+    let result = this.computeLocalIllumination(hit, mat, viewDir, shadingNormal, px, py);
 
     // ========== 2. 递归镜面反射 ==========
     if (mat.reflectivity > 0 && depth > 1) {
@@ -288,7 +301,9 @@ export class RayTracer {
     hit: HitResult,
     mat: RTMaterial,
     viewDir: Vec3,
-    shadingNormal: Vec3
+    shadingNormal: Vec3,
+    px: number = -1,
+    py: number = -1
   ): Color {
     // 环境光（不受阴影影响）
     let result = this.ambientColor.mul(mat.diffuseColor).mul(this.ambientIntensity);
@@ -306,15 +321,9 @@ export class RayTracer {
       const spec = Math.pow(RdotV, mat.shininess);
       const specular = mat.specularColor.mul(this.lightColor).mul(this.lightIntensity * spec);
 
-      // 诊断：首次 Phong 计算值
-      if (this.debugLitOnce) {
-        this.debugLitOnce = false;
-        console.log('[RT Debug] Phong 首次命中光照:');
-        console.log(`  法线N: (${shadingNormal.x.toFixed(3)}, ${shadingNormal.y.toFixed(3)}, ${shadingNormal.z.toFixed(3)})`);
-        console.log(`  光源L: (${this.lightDir.x.toFixed(3)}, ${this.lightDir.y.toFixed(3)}, ${this.lightDir.z.toFixed(3)})`);
-        console.log(`  视线V: (${viewDir.x.toFixed(3)}, ${viewDir.y.toFixed(3)}, ${viewDir.z.toFixed(3)})`);
-        console.log(`  N·L=${NdotL.toFixed(3)}  反射R=(${reflectDir.x.toFixed(3)}, ${reflectDir.y.toFixed(3)}, ${reflectDir.z.toFixed(3)})  R·V=${RdotV.toFixed(3)}`);
-        console.log(`  漫反射=(${diffuse.r.toFixed(2)}, ${diffuse.g.toFixed(2)}, ${diffuse.b.toFixed(2)})  高光spec=${spec.toFixed(4)}`);
+      // 诊断：高光显著时记录像素位置
+      if (spec > 0.05 && this.debugSpecPixels.length < RayTracer.MAX_DEBUG_SPEC) {
+        this.debugSpecPixels.push({ px, py, N: shadingNormal.clone(), L: this.lightDir.clone(), V: viewDir.clone(), R: reflectDir.clone(), RdotV, spec });
       }
 
       result = result.add(diffuse).add(specular);
