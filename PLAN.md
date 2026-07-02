@@ -227,12 +227,14 @@ I = I_local + ks * I_reflect + kt * I_refract
 - [x] Three.js 相机同步到光追相机
 - [x] 递归弹射框架（dtraceRay 含 depth/weight/Russian Roulette）
 
-### Phase 3：完整材质和光照 — 🔲 未开始
-- [ ] 实现递归镜面反射（`ks * I_reflect`）
-- [ ] 实现递归透明/折射（`kt * I_refract` + Snell + 全反射）
+### Phase 3：完整材质和光照 — 🚧 开发中
+- [x] 实现递归镜面反射（`ks * I_reflect`）→ 反射射线 + 递归调用
+- [x] 实现递归透明/折射（`kt * I_refract` + Snell + 全反射）→ 折射射线 + 递归调用
 - [x] ~~实现 Shadow Ray 阴影~~ → 已在 Phase 2 提前完成
-- [ ] 实现多重弹射（递归深度遍历，完整渲染方程）
+- [x] 实现多重弹射（递归深度遍历，完整渲染方程 I = I_local + ks·I_reflect + kt·I_refract）
 - [x] ~~光照参数可配置~~ → 方向光颜色/亮度/方向 + 环境光颜色/强度，实时滑块
+- [x] 实现 Fresnel 效应（Schlick 近似，透明材质反射/折射动态混合）
+- [x] 实现 Beer-Lambert 吸收（折射权重乘 diffuseColor 作为吸收衰减）
 
 ### Phase 4：BVH 和 GPU 加速 — 🔲 未开始
 - [ ] 实现 BVH 加速结构
@@ -351,4 +353,4 @@ npm run preview  # 预览生产版本
 
 ---
 
-_最后更新：2026-06-26 16:20_
+_最后更新：2026-07-02 15:53_

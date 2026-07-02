@@ -1,6 +1,6 @@
 /**
  * CPU 光线追踪核心引擎
- * Phase 2: 基础光线追踪（Möller-Trumbore 求交 + Phong 局部光照）
+ * Phase 3: 完整渲染方程（递归反射 + 折射 + Fresnel + Snell + Beer-Lambert）
  * 参考 Assets/Scripts/RayTracer.cs
  */
 import { Vec3, Ray, Color, Triangle, HitResult, emptyHit } from './Geometry';
@@ -138,7 +138,7 @@ export class RayTracer {
 
   /**
    * traceRay(ray, depth, weight)
-   * Phase 2: 仅计算局部 Phong 光照（无递归反射/折射）
+   * Phase 3: 完整渲染方程 I = I_local + ks * I_reflect + kt * I_refract
    */
   private traceRay(ray: Ray, depth: number, weight: Color): Color {
     // 能量衰减终止
@@ -157,14 +157,60 @@ export class RayTracer {
     const mat = this.materials[hit.materialIndex];
     if (!mat) return Color.black();
 
-    // 判断正面/背面
+    // 判断正面/背面 + 着色法线
     const entering = ray.direction.dot(hit.faceNormal) < 0;
     const shadingNormal = entering ? hit.normal : hit.faceNormal.negate();
 
-    // 局部光照
+    // 视角方向（从光源来，指向表面）
+    const viewDir = ray.direction.negate();
+    const cosTheta = Math.min(1, Math.max(0, viewDir.dot(shadingNormal)));
+
+    // ========== 1. 局部光照 ==========
     let result = this.computeLocalIllumination(hit, mat, ray.direction, shadingNormal);
 
-    // Phase 2: 无递归反射/折射，直接返回
+    // ========== 2. 递归镜面反射 ==========
+    if (mat.reflectivity > 0 && depth > 1) {
+      let kr = mat.reflectivity;
+
+      // 透明材质：用 Fresnel 混合反射/折射比例
+      if (mat.refractivity > 0) {
+        const n1 = entering ? 1.0 : mat.ior;
+        const n2 = entering ? mat.ior : 1.0;
+        kr = mat.reflectivity * this.fresnelSchlick(cosTheta, n1, n2);
+      }
+
+      if (kr > 0.001) {
+        const reflectDir = this.reflect(ray.direction, shadingNormal);
+        const reflectOrigin = hit.point.add(shadingNormal.mul(this.shadowBias));
+        const reflectRay = new Ray(reflectOrigin, reflectDir);
+        const reflectWeight = weight.mul(mat.specularColor).mul(kr);
+        result = result.add(this.traceRay(reflectRay, depth - 1, reflectWeight));
+      }
+    }
+
+    // ========== 3. 递归折射（含 Snell 定律 + 全反射 + Fresnel + Beer-Lambert） ==========
+    if (mat.refractivity > 0 && depth > 1) {
+      const n1 = entering ? 1.0 : mat.ior;
+      const n2 = entering ? mat.ior : 1.0;
+      const F = this.fresnelSchlick(cosTheta, n1, n2);
+
+      // 去除 Fresnel 反射部分后的折射权重
+      const kt = mat.refractivity * (1 - F);
+
+      if (kt > 0.001) {
+        const refractDir = this.refract(viewDir, shadingNormal, n1 / n2);
+        if (refractDir !== null) {
+          // 折射起点向内部偏移（避免自交）
+          const refractOrigin = hit.point.sub(shadingNormal.mul(this.shadowBias));
+          const refractRay = new Ray(refractOrigin, refractDir);
+          // Beer-Lambert: 吸收色作为能量权重衰减
+          const refractWeight = weight.mul(mat.diffuseColor).mul(kt);
+          result = result.add(this.traceRay(refractRay, depth - 1, refractWeight));
+        }
+        // 全反射：能量已计入反射分支（Fresnel），此处跳过
+      }
+    }
+
     return result;
   }
 
@@ -291,6 +337,36 @@ export class RayTracer {
   private reflect(incident: Vec3, normal: Vec3): Vec3 {
     const d = incident.dot(normal);
     return incident.sub(normal.mul(2 * d));
+  }
+
+  /**
+   * Snell 定律折射方向 (Vector Form)
+   * @param incident - 入射方向 (指向表面，即 -rayDirection)
+   * @param normal   - 表面法线 (指向入射介质)
+   * @param eta      - n1/n2 (入射介质折射率 / 透射介质折射率)
+   * @returns 折射方向，null 表示发生全反射 (TIR)
+   */
+  private refract(incident: Vec3, normal: Vec3, eta: number): Vec3 | null {
+    const cosI = normal.dot(incident);
+    const sin2T = eta * eta * (1 - cosI * cosI);
+    if (sin2T > 1) return null; // 全反射
+
+    const cosT = Math.sqrt(1 - sin2T);
+    // T = eta * I + (eta * cosI - cosT) * N
+    return incident.mul(eta).add(normal.mul(eta * cosI - cosT));
+  }
+
+  /**
+   * Schlick 近似 Fresnel 反射率
+   * @param cosTheta - cos(入射角)，clamp 到 [0,1]
+   * @param n1 - 入射介质折射率
+   * @param n2 - 透射介质折射率
+   * @returns Fresnel 反射系数 F (0~1)
+   */
+  private fresnelSchlick(cosTheta: number, n1: number, n2: number): number {
+    let R0 = ((n1 - n2) / (n1 + n2));
+    R0 *= R0; // R0 = ((n1-n2)/(n1+n2))²
+    return R0 + (1 - R0) * Math.pow(1 - cosTheta, 5);
   }
 
   /* ==================== 输出 ==================== */
