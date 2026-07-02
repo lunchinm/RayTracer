@@ -74,9 +74,11 @@ export class SceneEditor {
     this.gridHelper = new THREE.GridHelper(20, 20, 0x999999, 0xcccccc);
     this.scene3D.add(this.gridHelper);
 
-    // 环境光 + 方向光
+    // 环境光 + 半球光（天空/地面双色，解决背光面过暗）
     const ambient = new THREE.AmbientLight(0x888899, 0.5);
     this.scene3D.add(ambient);
+    const hemiLight = new THREE.HemisphereLight(0x8899cc, 0x445566, 0.4);
+    this.scene3D.add(hemiLight);
 
     this.dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
     this.dirLight.position.set(5, 10, 3);
@@ -268,18 +270,24 @@ export class SceneEditor {
             mat.metalness = 0.1;
             mat.transparent = false;
             mat.opacity = 1;
+            mat.depthWrite = true;
+            mat.side = THREE.FrontSide;
             break;
           case 'specular':
             mat.roughness = 0.05;
-            mat.metalness = 1.0;
+            mat.metalness = 0.3;    // 不用 1.0（无 envMap 时纯金属=全黑）
             mat.transparent = false;
             mat.opacity = 1;
+            mat.depthWrite = true;
+            mat.side = THREE.FrontSide;
             break;
           case 'transparent':
             mat.roughness = 0.1;
             mat.metalness = 0.05;
             mat.transparent = true;
             mat.opacity = 0.4;
+            mat.depthWrite = false;      // 不通写深度，让背面可见
+            mat.side = THREE.DoubleSide; // 渲染正面+背面
             break;
         }
         mat.needsUpdate = true;
