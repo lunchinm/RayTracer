@@ -106,7 +106,7 @@ export class App {
       resolution: '640x480', maxDepth: 5, aa: '4', energy: 0.01,
       bvh: true, gpu: false,
       lightColor: '#ffffff', lightIntensity: 1.0,
-      lightDirX: -0.58, lightDirY: 1, lightDirZ: -0.58,
+      lightDirX: 0.5, lightDirY: 1, lightDirZ: 0.3,
       ambientColor: '#404060', ambientIntensity: 0.3,
     };
     let saved: RPSettings;

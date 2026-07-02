@@ -20,8 +20,8 @@ export class RayTracer {
   private energyThreshold = 0.01;
   private backgroundColor = new Color(0.2, 0.25, 0.35);
 
-  // 光照参数（需与 SceneEditor.ts 的 DirectionalLight.position 同步）
-  private lightDir = new Vec3(-0.428, -0.857, -0.257).normalize();
+  // 光照参数（需与 index.html 滑块默认值 + SceneEditor.ts DirectionalLight.position 同步）
+  private lightDir = new Vec3(0.5, 1.0, 0.3).normalize();
   private lightColor = Color.white();
   private lightIntensity = 1.0;
   private ambientColor = new Color(0.25, 0.25, 0.38);
