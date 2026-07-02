@@ -542,6 +542,7 @@ export class App {
     const ldy = parseFloat((document.getElementById('light-dir-y') as HTMLInputElement).value);
     const ldz = parseFloat((document.getElementById('light-dir-z') as HTMLInputElement).value);
     const lightDir = new Vec3(ldx, ldy, ldz).normalize();
+    this.logger.info(`光追 lightDir: 滑块(${ldx.toFixed(2)}, ${ldy.toFixed(2)}, ${ldz.toFixed(2)}) → 归一化(${lightDir.x.toFixed(3)}, ${lightDir.y.toFixed(3)}, ${lightDir.z.toFixed(3)})`);
 
     // 5. 配置光追引擎
     this.rayTracer.configure({

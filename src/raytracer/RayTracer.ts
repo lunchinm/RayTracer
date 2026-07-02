@@ -33,6 +33,9 @@ export class RayTracer {
   private totalRays = 0;
   private intersectionTests = 0;
 
+  // 调试：首次光照计算日志
+  private debugLitOnce = true;
+
   // 回调
   onProgress?: (percent: number, rays: number, tests: number) => void;
   onComplete?: (pixels: ImageData) => void;
@@ -302,6 +305,17 @@ export class RayTracer {
       const RdotV = Math.max(0, reflectDir.dot(viewDir));
       const spec = Math.pow(RdotV, mat.shininess);
       const specular = mat.specularColor.mul(this.lightColor).mul(this.lightIntensity * spec);
+
+      // 诊断：首次 Phong 计算值
+      if (this.debugLitOnce) {
+        this.debugLitOnce = false;
+        console.log('[RT Debug] Phong 首次命中光照:');
+        console.log(`  法线N: (${shadingNormal.x.toFixed(3)}, ${shadingNormal.y.toFixed(3)}, ${shadingNormal.z.toFixed(3)})`);
+        console.log(`  光源L: (${this.lightDir.x.toFixed(3)}, ${this.lightDir.y.toFixed(3)}, ${this.lightDir.z.toFixed(3)})`);
+        console.log(`  视线V: (${viewDir.x.toFixed(3)}, ${viewDir.y.toFixed(3)}, ${viewDir.z.toFixed(3)})`);
+        console.log(`  N·L=${NdotL.toFixed(3)}  反射R=(${reflectDir.x.toFixed(3)}, ${reflectDir.y.toFixed(3)}, ${reflectDir.z.toFixed(3)})  R·V=${RdotV.toFixed(3)}`);
+        console.log(`  漫反射=(${diffuse.r.toFixed(2)}, ${diffuse.g.toFixed(2)}, ${diffuse.b.toFixed(2)})  高光spec=${spec.toFixed(4)}`);
+      }
 
       result = result.add(diffuse).add(specular);
     }
