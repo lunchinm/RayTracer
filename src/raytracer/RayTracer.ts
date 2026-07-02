@@ -20,8 +20,8 @@ export class RayTracer {
   private energyThreshold = 0.01;
   private backgroundColor = new Color(0.2, 0.25, 0.35);
 
-  // 光照参数
-  private lightDir = new Vec3(0.577, -0.577, -0.577).normalize();
+  // 光照参数（需与 SceneEditor.ts 的 DirectionalLight.position 同步）
+  private lightDir = new Vec3(-0.428, -0.857, -0.257).normalize();
   private lightColor = Color.white();
   private lightIntensity = 1.0;
   private ambientColor = new Color(0.25, 0.25, 0.38);
@@ -161,12 +161,12 @@ export class RayTracer {
     const entering = ray.direction.dot(hit.faceNormal) < 0;
     const shadingNormal = entering ? hit.normal : hit.faceNormal.negate();
 
-    // 视角方向（从光源来，指向表面）
+    // 视角方向（从表面指向相机）
     const viewDir = ray.direction.negate();
     const cosTheta = Math.min(1, Math.max(0, viewDir.dot(shadingNormal)));
 
     // ========== 1. 局部光照 ==========
-    let result = this.computeLocalIllumination(hit, mat, ray.direction, shadingNormal);
+    let result = this.computeLocalIllumination(hit, mat, viewDir, shadingNormal);
 
     // ========== 2. 递归镜面反射 ==========
     if (mat.reflectivity > 0 && depth > 1) {
@@ -299,7 +299,7 @@ export class RayTracer {
       const diffuse = mat.diffuseColor.mul(this.lightColor).mul(this.lightIntensity * NdotL);
 
       const reflectDir = this.reflect(this.lightDir.negate(), shadingNormal);
-      const RdotV = Math.max(0, reflectDir.dot(viewDir.negate()));
+      const RdotV = Math.max(0, reflectDir.dot(viewDir));
       const spec = Math.pow(RdotV, mat.shininess);
       const specular = mat.specularColor.mul(this.lightColor).mul(this.lightIntensity * spec);
 
